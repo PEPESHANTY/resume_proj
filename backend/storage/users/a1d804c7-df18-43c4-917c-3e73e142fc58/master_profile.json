@@ -1,0 +1,335 @@
+{
+  "personal": {
+    "name": "SHANTANU BHUTE",
+    "title": "AI Software Engineer Intern | Java & SQL Developer | Cloud & AI Enthusiast",
+    "title_variants": {
+      "generic": "AI Software Engineer Intern | Java & SQL Developer | Cloud & AI Enthusiast",
+      "ai_llm": "AI Software Engineer Intern | Generative AI & LLM Developer",
+      "data": "Data Scientist | Python & SQL Developer",
+      "analytics": "Data Analyst | Machine Learning Enthusiast",
+      "swe": "Software Engineer | Java & SQL Developer",
+      "research": "AI Researcher | Machine Learning & Cloud Computing"
+    },
+    "location": "Dublin 04, Ireland",
+    "email": "shantanubhute@gmail.com",
+    "phone": "+353 899476612",
+    "links": {
+      "linkedin": {
+        "url": null,
+        "display": null
+      },
+      "github": {
+        "url": null,
+        "display": null
+      },
+      "portfolio": null,
+      "other": []
+    }
+  },
+  "summary_variants": {
+    "generic": "Computer Science graduate from University College Dublin and Data Scientist Intern at CeADAR, with hands-on experience in Python, R, and machine learning pipelines. Skilled in statistical modelling, data wrangling, and reproducible coding practices (Git), with a passion for developing intelligent, scalable solutions for real-world systems.",
+    "ai_llm": "Passionate about leveraging data-driven insights and cutting-edge AI techniques to solve complex real-world problems and drive business impact, with expertise in Generative AI, LangChain, and LLMs.",
+    "data": "Experienced in Python, R, SQL, and statistical modelling, with a strong focus on data wrangling, machine learning pipelines, and data visualization.",
+    "analytics": "Skilled in data analysis, visualization, and reporting using tools like Power BI, Matplotlib, and Seaborn, with a focus on actionable insights.",
+    "swe": "Proficient in Java, SQL, and backend development, with experience in Spring Boot, REST APIs, and cloud-based solutions.",
+    "research": "Experienced in AI research and development, including computer vision, NLP, and retrieval-augmented generation pipelines."
+  },
+  "skills_pool": [
+    {
+      "category": "Languages",
+      "items": [
+        "Python",
+        "SQL",
+        "Java",
+        "R",
+        "Bash",
+        "HTML",
+        "CSS"
+      ]
+    },
+    {
+      "category": "Frameworks",
+      "items": [
+        "TensorFlow",
+        "PyTorch",
+        "scikit-learn",
+        "Flask",
+        "Streamlit",
+        "Spring Boot",
+        "Machine Learning"
+      ]
+    },
+    {
+      "category": "GenAI & LLM Tools",
+      "items": [
+        "OpenAI API",
+        "LangChain",
+        "Hugging Face Hub",
+        "Prompt Engineering",
+        "Statistical Modelling"
+      ]
+    },
+    {
+      "category": "Databases",
+      "items": [
+        "PostgreSQL",
+        "MySQL",
+        "MongoDB",
+        "Redis",
+        "AWS Redshift",
+        "AWS RDS"
+      ]
+    },
+    {
+      "category": "Cloud & MLOps",
+      "items": [
+        "AWS (SageMaker, Lambda, S3, EC2, RDS)",
+        "Azure ML",
+        "Docker",
+        "Kubernetes",
+        "MLflow",
+        "Edge AI"
+      ]
+    },
+    {
+      "category": "Data Engineering & Pipelines",
+      "items": [
+        "Apache Airflow",
+        "Spark",
+        "Kafka",
+        "Pandas",
+        "NumPy",
+        "AWS Glue",
+        "Prompt Tuning",
+        "ETL Workflows"
+      ]
+    },
+    {
+      "category": "Visualization & Reporting",
+      "items": [
+        "Power BI",
+        "Matplotlib",
+        "Seaborn",
+        "Plotly",
+        "ggplot2"
+      ]
+    },
+    {
+      "category": "ML & Data Science",
+      "items": [
+        "Python",
+        "R",
+        "pandas",
+        "NumPy",
+        "TensorFlow",
+        "PyTorch",
+        "scikit-learn",
+        "ggplot2"
+      ]
+    },
+    {
+      "category": "Embedded & Edge",
+      "items": [
+        "Edge AI",
+        "Embedded Systems (basic)",
+        "Git",
+        "Docker",
+        "Azure ML",
+        "AWS"
+      ]
+    },
+    {
+      "category": "Others",
+      "items": [
+        "REST APIs",
+        "FastAPI",
+        "OpenCV",
+        "NLP",
+        "Model Deployment (API & Streamlit)",
+        "Git",
+        "dplyr"
+      ]
+    }
+  ],
+  "education": [
+    {
+      "id": "edu_1",
+      "degree": "Master of Science in Computer Science",
+      "institution": "University College Dublin, Ireland",
+      "honors": "First Class with Honors (1:1)",
+      "grade": null,
+      "date": "Sept 2024 – Sept 2025",
+      "modules": "Cloud Computing\nMulti-Agent System\nDistributed Systems\nBig Data Programming\nGenerative AI\nEnterprise, Innovation and Entrepreneurship\nRDBMS\nMachine Learning",
+      "active": true
+    },
+    {
+      "id": "edu_2",
+      "degree": "Bachelor of Engineering in Computer Science with honors in AI-ML",
+      "institution": "Savitribai Phule Pune University, India",
+      "honors": "First Class with Honor",
+      "grade": "CGPA: 8.97/10",
+      "date": "Aug 2019 - May 2023",
+      "modules": "Object-Oriented Programming\nCloud Computing\nBlockchain\nAI-ML\nWeb Technologies",
+      "active": true
+    }
+  ],
+  "certifications": [
+    {
+      "id": "cert_1",
+      "name": "AWS Certified Cloud Practitioner",
+      "link_text": "Certified Badge",
+      "url": null,
+      "date": "Dec 2024 - Jan 2025",
+      "active": true
+    },
+    {
+      "id": "cert_2",
+      "name": "Data Science Course: UNIVERSITY OF MICHIGAN",
+      "link_text": "Certification link",
+      "url": null,
+      "date": "Oct 2023 - Dec 2023",
+      "active": true
+    },
+    {
+      "id": "cert_3",
+      "name": "1Z0-071: Oracle Database SQL Certification",
+      "link_text": "Certified Badge",
+      "url": null,
+      "date": "July 2024 - Aug 2024",
+      "active": true
+    },
+    {
+      "id": "cert_4",
+      "name": "AWS Academy Cloud Architecting and Accreditation",
+      "link_text": "Certification links",
+      "url": null,
+      "date": "Nov 2021 - May 2022",
+      "active": true
+    },
+    {
+      "id": "cert_5",
+      "name": "Linux Fundamentals",
+      "link_text": "Certification link",
+      "url": null,
+      "date": "Jan 2022 - Mar 2022",
+      "active": true
+    }
+  ],
+  "experience": [
+    {
+      "id": "exp_1",
+      "company": "CeADAR – Ireland’s Centre for Applied AI",
+      "location": "Dublin, Ireland",
+      "role": "Data Scientist Intern",
+      "date_range": "May 2025 – Present",
+      "bullets": [
+        "Designed and deployed a Retrieval-Augmented Generation (RAG) pipeline using LangChain, OpenAI, and Qdrant to enable domain-specific knowledge retrieval from PDFs and rice/agriculture websites.",
+        "Built a Streamlit and React based chatbot UI with memory, citations, and multilingual (English & Vietnamese) support, collaborating closely with cross-functional teams.",
+        "Automated PDF/web ingestion pipelines with chunking, embeddings (OpenAI/Qwen), metadata enrichment, and Qdrant storage, and implemented evaluation workflows using RAGAS to validate retrieval accuracy.",
+        "Developed a computer vision model using PyTorch to classify and label multiple rice disease varieties from field images, applying CNN-based architectures and transfer learning for early crop disease detection."
+      ],
+      "active": true
+    },
+    {
+      "id": "exp_2",
+      "company": "LTIMINDTREE",
+      "location": "Mumbai, India",
+      "role": "Software Engineer – SQL, Java & AI Projects (Citibank client)",
+      "date_range": "Jun 2024 – Aug 2024",
+      "bullets": [
+        "Optimized Oracle SQL queries and backend pipelines, improving data retrieval performance for Citibank’s reporting systems.",
+        "Developed Java modules for intelligent data validation and integrated backend checks with early-stage anomaly detection logic.",
+        "Explored prompt engineering and Python-based model testing to support internal AI-assisted decision modules.",
+        "Designed and validated ML pipelines with quality checks and logging on AWS (Lambda + S3), ensuring data integrity and anomaly detection in low-latency environments."
+      ],
+      "active": true
+    },
+    {
+      "id": "exp_3",
+      "company": "Cognizant Technology Solutions",
+      "location": "Bangalore, India",
+      "role": "Programmer Analyst Trainee - Kohl’s Corp US",
+      "date_range": "Dec 2023 – May 2024",
+      "bullets": [
+        "Built conversational AI chatbot using Google Dialogflow, trained on CRM use cases to automate customer query prediction.",
+        "Developed backend services using Java and Spring Boot to integrate chatbot intelligence with CRM workflows.",
+        "Improved dynamic routing and response accuracy using Avaya Aura and Genesys Cloud with integrated AI triggers.",
+        "Designed intent classification strategies using NLP preprocessing and training phrase optimization, improving chatbot prediction accuracy by 18% across varied customer input."
+      ],
+      "active": true
+    }
+  ],
+  "projects": [
+    {
+      "id": "proj_1",
+      "title": "RiceAI Expert: Sustainable Farming Chatbot",
+      "date": "2025",
+      "tech": "LangChain, LangGraph, Qdrant, OpenAI/Qwen Embeddings, Streamlit, Supabase, Neo4j, RAGAS, Git, LLMs",
+      "tech_short": "LangChain, Qdrant, Streamlit, LLMs",
+      "bullets": [
+        "Designed a RAG-based AI assistant for rice farming, integrating PDFs and web content with LangChain, Qdrant, and OpenAI/Qwen embeddings.",
+        "Built a Streamlit chatbot UI with memory, citations, and multilingual support (English & Vietnamese).",
+        "Automated data ingestion pipelines (PDF/web) with chunking, embeddings, and Supabase/Qdrant storage.",
+        "Implemented RAGAS evaluation (BLEU, ROUGE, BERTScore) to benchmark retrieval and generation quality.",
+        "Currently extending to GraphRAG (LangGraph + Neo4j) for explainable, hybrid retrieval."
+      ],
+      "bullet_short": "Developed a RAG-based AI assistant for rice farming with multilingual chatbot and automated pipelines.",
+      "paper_url": null,
+      "active": true
+    },
+    {
+      "id": "proj_2",
+      "title": "ScholarGenie: Research Paper Discovery Agent using LLMs",
+      "date": "March 2024",
+      "tech": "Python, LangChain, OpenAI GPT-4, arXiv API, Semantic Scholar API, Streamlit, LLMs",
+      "tech_short": "LangChain, GPT-4, Streamlit",
+      "bullets": [
+        "Built and deployed a lightweight LLM-based paper summarizer with streaming output via Streamlit, simulating edge deployment scenarios.",
+        "Integrated Semantic Scholar and arXiv APIs for real-time academic paper search and filtering by keywords and categories.",
+        "Leveraged LangChain and GPT-4 to generate concise summaries and user-friendly insights, improving research accessibility.",
+        "Developed an intuitive frontend with Streamlit to enable interactive exploration of AI-generated summaries and academic trends."
+      ],
+      "bullet_short": "Developed an LLM-based research paper summarizer with real-time search and interactive UI.",
+      "paper_url": null,
+      "active": true
+    },
+    {
+      "id": "proj_3",
+      "title": "Face Verification using Twin Convolutional Neural Networks",
+      "date": "June 2023",
+      "tech": "Deep Learning, TensorFlow, Keras, Python, NumPy, OpenCV",
+      "tech_short": "TensorFlow, Keras, Python",
+      "bullets": [
+        "Implemented data augmentation techniques to improve model robustness and performance across diverse facial datasets.",
+        "Developed a face verification system using a Siamese Convolutional Neural Network for one-shot learning, achieving 91.25% accuracy in classifying 13,000 unique facial images, optimized for scalability and efficiency.",
+        "Outperformed traditional methods like KNN and random guessing, delivering superior performance in real-world applications.",
+        "Extended the system with experiment tracking using TensorBoard and integrated model evaluation pipelines to ensure reproducibility and deployment-readiness in real-world AI applications."
+      ],
+      "bullet_short": "Developed a Siamese CNN-based face verification system with 91.25% accuracy.",
+      "paper_url": null,
+      "active": true
+    }
+  ],
+  "extracurricular": [
+    {
+      "id": "extra_1",
+      "text": "Badminton Captain: Represented school and college teams at the national level, demonstrating leadership and teamwork.",
+      "active": true
+    },
+    {
+      "id": "extra_2",
+      "text": "National Service Scheme (NSS): Led and joined social drives, including a blood donation camp, fostering community engagement.",
+      "active": true
+    },
+    {
+      "id": "extra_3",
+      "text": "Professional Networking: Actively connected with industry professionals at company events to stay updated on trends.",
+      "active": true
+    },
+    {
+      "id": "extra_4",
+      "text": "Microsoft Space AI Event: Participated with Team CeADAR, gaining exposure to cutting-edge AI applications and industry collaboration.",
+      "active": true
+    }
+  ]
+}

@@ -1,0 +1,185 @@
+{
+  "personal": {
+    "name": "SHANTANU BHUTE",
+    "title": "AI Software Engineer | LLM & Cloud Solutions Developer",
+    "location": "Dublin 04, Ireland",
+    "email": "shantanubhute@gmail.com",
+    "phone": "+353 899476612",
+    "linkedin": {
+      "url": null,
+      "display": null
+    },
+    "github": {
+      "url": null,
+      "display": null
+    }
+  },
+  "summary": "Experienced AI Software Engineer with expertise in backend development, LLM integration, and cloud-based AI solutions. Skilled in Python, TensorFlow, PyTorch, LangChain, and AWS SageMaker. Proven ability to design secure, scalable applications aligned with GDPR and Responsible AI guidelines, and deliver intuitive front-end interfaces using React and REST APIs.",
+  "skills": {
+    "full": [
+      {
+        "category": "Languages",
+        "items": "Python, SQL, Java, R, Bash, HTML, CSS"
+      },
+      {
+        "category": "Frameworks",
+        "items": "TensorFlow, PyTorch, LangChain, Semantic Kernel, scikit-learn, Flask, Streamlit"
+      },
+      {
+        "category": "GenAI & LLM Tools",
+        "items": "OpenAI API, LangChain, Hugging Face Hub, Prompt Engineering"
+      },
+      {
+        "category": "Cloud & MLOps",
+        "items": "AWS SageMaker, Azure ML, Docker, Kubernetes, MLflow"
+      },
+      {
+        "category": "Visualization & Reporting",
+        "items": "Matplotlib, Seaborn, Plotly, Power BI"
+      },
+      {
+        "category": "Databases",
+        "items": "PostgreSQL, MySQL, MongoDB, Redis, AWS RDS"
+      },
+      {
+        "category": "Others",
+        "items": "REST APIs, GraphQL, FastAPI, OpenCV, Git, Model Deployment"
+      }
+    ],
+    "compact": [
+      {
+        "category": "Languages",
+        "items": "Python, SQL, Java"
+      },
+      {
+        "category": "Frameworks",
+        "items": "TensorFlow, PyTorch, LangChain"
+      },
+      {
+        "category": "Cloud & MLOps",
+        "items": "AWS SageMaker, Azure ML, Docker"
+      },
+      {
+        "category": "Others",
+        "items": "REST APIs, GraphQL, OpenAI API"
+      }
+    ]
+  },
+  "education": [
+    {
+      "degree": "Master of Science in Computer Science",
+      "institution": "University College Dublin, Ireland",
+      "honors": "First Class with Honors (1:1)",
+      "grade": null,
+      "date": "Sept 2024 – Sept 2025",
+      "modules": "Cloud Computing\nGenerative AI\nMachine Learning\nDistributed Systems\nBig Data Programming"
+    },
+    {
+      "degree": "Bachelor of Engineering in Computer Science with honors in AI-ML",
+      "institution": "Savitribai Phule Pune University, India",
+      "honors": "First Class with Honor",
+      "grade": "CGPA: 8.97/10",
+      "date": "Aug 2019 - May 2023",
+      "modules": "Object-Oriented Programming\nCloud Computing\nAI-ML\nWeb Technologies"
+    }
+  ],
+  "certifications": [
+    {
+      "name": "AWS Certified Cloud Practitioner",
+      "link_text": "Certified Badge",
+      "url": null,
+      "date": "Dec 2024 - Jan 2025"
+    },
+    {
+      "name": "1Z0-071: Oracle Database SQL Certification",
+      "link_text": "Certified Badge",
+      "url": null,
+      "date": "July 2024 - Aug 2024"
+    },
+    {
+      "name": "Data Science Course: UNIVERSITY OF MICHIGAN",
+      "link_text": "Certification link",
+      "url": null,
+      "date": "Oct 2023 - Dec 2023"
+    },
+    {
+      "name": "AWS Academy Cloud Architecting and Accreditation",
+      "link_text": "Certification links",
+      "url": null,
+      "date": "Nov 2021 - May 2022"
+    }
+  ],
+  "experience": [
+    {
+      "company": "CeADAR – Ireland’s Centre for Applied AI",
+      "location": "Dublin, Ireland",
+      "role": "Data Scientist Intern",
+      "date_range": "May 2025 – Present",
+      "bullets": [
+        "Designed and deployed Retrieval-Augmented Generation (RAG) pipelines using LangChain, OpenAI, and Qdrant to enable secure domain-specific knowledge retrieval.",
+        "Built front-end chatbot interfaces with React and Streamlit, integrating multilingual support and citations.",
+        "Automated data ingestion pipelines with chunking, embeddings, and storage, ensuring compliance with GDPR and Responsible AI guidelines.",
+        "Developed computer vision models using PyTorch for early detection of rice diseases via CNN architectures."
+      ]
+    },
+    {
+      "company": "LTIMINDTREE",
+      "location": "Mumbai, India",
+      "role": "Software Engineer – SQL, Java & AI Projects (Citibank client)",
+      "date_range": "Jun 2024 – Aug 2024",
+      "bullets": [
+        "Optimized Oracle SQL queries and backend pipelines, improving data retrieval for reporting systems.",
+        "Developed Java modules for intelligent data validation and anomaly detection using backend services.",
+        "Designed ML pipelines on AWS (Lambda + S3) with MLOps practices for monitoring and lifecycle management.",
+        "Explored prompt engineering and Python-based model testing for AI-assisted decision modules."
+      ]
+    },
+    {
+      "company": "Cognizant Technology Solutions",
+      "location": "Bangalore, India",
+      "role": "Programmer Analyst Trainee - Kohl’s Corp US",
+      "date_range": "Dec 2023 – May 2024",
+      "bullets": [
+        "Built conversational AI chatbot using Google Dialogflow, integrated with CRM workflows via backend Java services.",
+        "Improved dynamic routing and response accuracy using Avaya Aura and Genesys Cloud with AI triggers.",
+        "Designed intent classification strategies using NLP techniques, boosting chatbot accuracy by 18%."
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "title": "RiceAI Expert: Sustainable Farming Chatbot",
+      "date": "2025",
+      "tech": "Technologies: LangChain, Qdrant, OpenAI/Qwen Embeddings, Streamlit, Supabase, Neo4j, RAGAS",
+      "bullets": [
+        "Designed a RAG-based AI assistant for rice farming, integrating PDFs and web content with LangChain and OpenAI/Qwen embeddings.",
+        "Built multilingual chatbot interfaces with Streamlit and React, supporting memory and citations.",
+        "Automated data ingestion pipelines (PDF/web) with embeddings and Supabase/Qdrant storage."
+      ]
+    },
+    {
+      "title": "ScholarGenie: Research Paper Discovery Agent using LLMs",
+      "date": "March 2024",
+      "tech": "Technologies: Python, LangChain, GPT-4, arXiv API, Semantic Scholar API, Streamlit",
+      "bullets": [
+        "Developed an LLM-based paper summarizer with real-time academic search via Semantic Scholar and arXiv APIs.",
+        "Integrated GPT-4 for concise summaries and insights, improving research accessibility.",
+        "Built interactive UI using Streamlit for exploration of AI-generated summaries."
+      ]
+    },
+    {
+      "title": "Face Verification using Twin Convolutional Neural Networks",
+      "date": "June 2023",
+      "tech": "Technologies: TensorFlow, Keras, Python, OpenCV",
+      "bullets": [
+        "Developed a Siamese CNN-based face verification system achieving 91.25% accuracy across 13,000 facial images.",
+        "Implemented data augmentation techniques to improve model robustness and scalability.",
+        "Tracked experiments using TensorBoard and ensured reproducibility for deployment-ready pipelines."
+      ]
+    }
+  ],
+  "extracurricular": [
+    "Microsoft Space AI Event: Participated with Team CeADAR, gaining exposure to cutting-edge AI applications and industry collaboration.",
+    "National Service Scheme (NSS): Led and joined social drives, including a blood donation camp, fostering community engagement."
+  ]
+}

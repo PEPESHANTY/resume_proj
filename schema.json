@@ -1,0 +1,166 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CV Data",
+  "type": "object",
+  "required": ["personal", "skills", "education", "certifications", "experience", "projects"],
+  "properties": {
+
+    "personal": {
+      "type": "object",
+      "required": ["name", "title", "location", "email", "phone", "linkedin", "github"],
+      "properties": {
+        "name":     { "type": "string", "description": "Full name in UPPERCASE e.g. JOHN DOE" },
+        "title":    { "type": "string", "description": "Headline shown below name e.g. 'Data Scientist  |  ML Engineer'" },
+        "location": { "type": "string" },
+        "email":    { "type": "string" },
+        "phone":    { "type": "string" },
+        "linkedin": {
+          "type": "object",
+          "required": ["url", "display"],
+          "properties": {
+            "url":     { "type": "string" },
+            "display": { "type": "string", "description": "Anchor text shown in the CV e.g. 'LinkedIn'" }
+          }
+        },
+        "github": {
+          "type": "object",
+          "required": ["url", "display"],
+          "properties": {
+            "url":     { "type": "string" },
+            "display": { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "summary": {
+      "type": ["string", "null"],
+      "description": "Professional summary paragraph. null = omit the section (e.g. 1-page CV)."
+    },
+
+    "skills": {
+      "type": "object",
+      "required": ["full", "compact"],
+      "properties": {
+        "full": {
+          "type": "array",
+          "description": "Used on 2-page CV. More categories, longer labels.",
+          "items": {
+            "type": "object",
+            "required": ["category", "items"],
+            "properties": {
+              "category": { "type": "string" },
+              "items":    { "type": "string", "description": "Comma-separated technologies" }
+            }
+          }
+        },
+        "compact": {
+          "type": "array",
+          "description": "Used on 1-page CV. Fewer categories, shorter labels.",
+          "items": {
+            "type": "object",
+            "required": ["category", "items"],
+            "properties": {
+              "category": { "type": "string" },
+              "items":    { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+
+    "education": {
+      "type": "array",
+      "description": "List most recent first.",
+      "items": {
+        "type": "object",
+        "required": ["degree", "institution", "honors", "grade", "date"],
+        "properties": {
+          "degree":      { "type": "string" },
+          "institution": { "type": "string" },
+          "honors":      { "type": "string", "description": "e.g. 'First Class with Honors'" },
+          "grade":       { "type": "string", "description": "e.g. '(1:1)' or 'CGPA: 8.97/10'" },
+          "date":        { "type": "string", "description": "e.g. 'Sept 2024 – Sept 2025'" },
+          "modules":     {
+            "type": ["string", "null"],
+            "description": "Relevant modules text. Use \\n to force a line break mid-text. null = omit line."
+          }
+        }
+      }
+    },
+
+    "certifications": {
+      "type": "array",
+      "description": "All certs. Renderer picks first N for 1-page (default 4).",
+      "items": {
+        "type": "object",
+        "required": ["name", "link_text", "date"],
+        "properties": {
+          "name":      { "type": "string" },
+          "link_text": { "type": "string", "description": "Anchor text for hyperlink e.g. 'Certified Badge'" },
+          "url":       { "type": ["string", "null"], "description": "Badge/cert URL. null = display name only, no hyperlink." },
+          "date":      { "type": "string" }
+        }
+      }
+    },
+
+    "experience": {
+      "type": "array",
+      "description": "Work history, most recent first.",
+      "items": {
+        "type": "object",
+        "required": ["company", "location", "role", "date_range", "bullets", "bullets_short"],
+        "properties": {
+          "company":       { "type": "string" },
+          "location":      { "type": "string" },
+          "role":          { "type": "string" },
+          "date_range":    { "type": "string" },
+          "bullets":       {
+            "type": "array",
+            "description": "Full bullets for 2-page CV (3–5 bullets).",
+            "items": { "type": "string" }
+          },
+          "bullets_short": {
+            "type": "array",
+            "description": "Condensed bullets for 1-page CV (2–3 bullets).",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "projects": {
+      "type": "array",
+      "description": "Key projects, most relevant first.",
+      "items": {
+        "type": "object",
+        "required": ["title", "date", "tech", "bullets"],
+        "properties": {
+          "title":        { "type": "string" },
+          "date":         { "type": "string", "description": "Inline bold date e.g. 'Dec 2025' or 'Research Paper, June 2023'" },
+          "tech":         { "type": "string", "description": "Full tech string for 2-page e.g. 'Technologies: Python, ...'" },
+          "tech_short":   { "type": "string", "description": "Short tech string for 1-page (no 'Technologies:' prefix). Optional." },
+          "bullets":      {
+            "type": "array",
+            "description": "Full bullet list for 2-page.",
+            "items": { "type": "string" }
+          },
+          "bullet_short": {
+            "type": ["string", "null"],
+            "description": "Single-line summary for 1-page. If null, uses bullets[0]."
+          },
+          "paper_url":    {
+            "type": ["string", "null"],
+            "description": "If set AND date contains 'Research Paper', that text becomes a hyperlink."
+          }
+        }
+      }
+    },
+
+    "extracurricular": {
+      "type": "array",
+      "description": "Optional. Omit section if empty or null.",
+      "items": { "type": "string" }
+    }
+  }
+}

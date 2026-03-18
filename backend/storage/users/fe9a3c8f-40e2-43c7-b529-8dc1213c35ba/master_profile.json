@@ -1,0 +1,325 @@
+{
+  "personal": {
+    "name": "TEJAL DABHADE",
+    "title": "Data Analyst | Dublin, Ireland",
+    "title_variants": {
+      "generic": "Data Analyst",
+      "ai_llm": "AI & LLM Specialist",
+      "data": "Data Scientist",
+      "analytics": "Business Intelligence Analyst",
+      "swe": "Full Stack Developer",
+      "research": "AI Researcher"
+    },
+    "location": "Dublin, Ireland",
+    "email": "tejal.n.dabhade@gmail.com",
+    "phone": "+353 899 629 356",
+    "links": {
+      "linkedin": {
+        "url": "https://linkedin.com/in/tejaldabhade",
+        "display": "linkedin.com/in/tejaldabhade"
+      },
+      "github": null,
+      "portfolio": null,
+      "other": []
+    }
+  },
+  "summary_variants": {
+    "generic": "Data Analyst with expertise in Power BI, SQL, and ETL/ELT pipelines, delivering business intelligence and analytics solutions.",
+    "ai_llm": "AI Researcher specializing in scalable backend data services, LLM pipelines, and vector databases.",
+    "data": "Data Scientist with hands-on experience in cloud platforms, data engineering, and predictive modeling.",
+    "analytics": "Business Intelligence Analyst skilled in Power BI, DAX, and interactive dashboards for actionable insights.",
+    "swe": "Full Stack Developer with experience in REST APIs, Flask, and secure enterprise modules.",
+    "research": "AI Research Intern at CeADAR, building scalable data services and optimizing LLM pipelines."
+  },
+  "skills_pool": [
+    {
+      "category": "BI & Reporting",
+      "items": [
+        "Power BI",
+        "DAX",
+        "SPSS",
+        "Matplotlib",
+        "Seaborn",
+        "Plotly",
+        "Streamlit"
+      ]
+    },
+    {
+      "category": "Data & ETL",
+      "items": [
+        "SQL",
+        "PostgreSQL",
+        "MySQL",
+        "Oracle",
+        "MongoDB",
+        "Redis",
+        "Apache Airflow",
+        "Spark",
+        "Kafka",
+        "AWS Glue",
+        "Pandas",
+        "NumPy",
+        "data warehouse concepts",
+        "data quality"
+      ]
+    },
+    {
+      "category": "Cloud",
+      "items": [
+        "AWS (S3, EC2, RDS, SageMaker, Lambda)",
+        "GCP (TPU VM)",
+        "Azure ML",
+        "Azure Data Factory",
+        "Docker",
+        "Kubernetes"
+      ]
+    },
+    {
+      "category": "Languages",
+      "items": [
+        "Python",
+        "SQL",
+        "R",
+        "JavaScript",
+        "HTML"
+      ]
+    },
+    {
+      "category": "Frameworks",
+      "items": [
+        "FastAPI",
+        "Flask",
+        "REST APIs",
+        "MLflow",
+        "LangChain",
+        "scikit-learn",
+        "PyTorch"
+      ]
+    },
+    {
+      "category": "Databases",
+      "items": [
+        "PostgreSQL",
+        "MySQL",
+        "Oracle",
+        "MongoDB",
+        "Redis",
+        "Qdrant (Vector DB)",
+        "Neo4j"
+      ]
+    },
+    {
+      "category": "Tools",
+      "items": [
+        "Git",
+        "JIRA",
+        "Langfuse",
+        "Agile/Scrum",
+        "data visualization"
+      ]
+    }
+  ],
+  "education": [
+    {
+      "id": "edu_1",
+      "degree": "MSc Data & Computational Science",
+      "institution": "University College Dublin",
+      "honors": null,
+      "grade": "GPA: 3.56/4.2 (2H1)",
+      "date": "2024 – 2025",
+      "modules": "Machine Learning & AI, Statistical ML, Modern Regression (A−), Data Programming Python (A), SAS (A+), Statistical Network Analysis (A), Maths Modelling (A+)",
+      "active": true
+    },
+    {
+      "id": "edu_2",
+      "degree": "BEng Computer Engineering (AI & ML)",
+      "institution": "Savitribai Phule Pune University",
+      "honors": "First Class Distinction",
+      "grade": "CGPA: 9.18/10",
+      "date": "2019 – 2023",
+      "modules": null,
+      "active": true
+    }
+  ],
+  "certifications": [
+    {
+      "id": "cert_1",
+      "name": "AWS Academy Cloud Foundations",
+      "link_text": null,
+      "url": null,
+      "date": null,
+      "active": true
+    },
+    {
+      "id": "cert_2",
+      "name": "Data Science — University of Michigan",
+      "link_text": null,
+      "url": null,
+      "date": null,
+      "active": true
+    },
+    {
+      "id": "cert_3",
+      "name": "Complete R Programming",
+      "link_text": null,
+      "url": null,
+      "date": null,
+      "active": true
+    },
+    {
+      "id": "cert_4",
+      "name": "Agile Methodologies",
+      "link_text": null,
+      "url": null,
+      "date": null,
+      "active": true
+    },
+    {
+      "id": "cert_5",
+      "name": "Mastering JIRA",
+      "link_text": null,
+      "url": null,
+      "date": null,
+      "active": true
+    },
+    {
+      "id": "cert_6",
+      "name": "ASP.NET Core MVC",
+      "link_text": null,
+      "url": null,
+      "date": null,
+      "active": true
+    },
+    {
+      "id": "cert_7",
+      "name": "Complete C# Masterclass",
+      "link_text": null,
+      "url": null,
+      "date": null,
+      "active": true
+    }
+  ],
+  "experience": [
+    {
+      "id": "exp_1",
+      "company": "CeADAR – Ireland's National AI Research Centre",
+      "location": "Dublin, Ireland",
+      "role": "Data Scientist Intern",
+      "date_range": "Jan 2025 – Present",
+      "bullets": [
+        "Engineered end-to-end RAG pipeline (Qdrant vector DB + Qwen LLM on Google Cloud TPU VMs) for AIRRVie, an AI-powered agricultural assistant; applied geospatial feature engineering to enrich location-aware queries.",
+        "Built LLM-as-a-Judge evaluation pipeline (Claude Haiku + Langfuse) to score and filter a 10,000+ record Vietnamese agricultural QA dataset, structuring entity relationships in Neo4j knowledge graphs.",
+        "Reduced end-to-end LLM response latency by ~35% via max_tokens tuning, streaming optimisation, and fixing a Qwen timeout truncation bug; ensured data quality and reliability across pipeline outputs.",
+        "Resolved PostgreSQL connection pool exhaustion under 50+ concurrent users through load balancing; built network latency profiler benchmarking FastAPI, PostgreSQL, Qdrant (~120ms baseline), and Qwen TPU across 5 concurrency levels.",
+        "Diagnosed HTTP/gRPC protocol mismatch causing TPU health probe failures, restoring full service observability."
+      ],
+      "active": true
+    },
+    {
+      "id": "exp_2",
+      "company": "Cognizant Technology Solutions",
+      "location": "Chennai, India",
+      "role": "Full Stack Developer",
+      "date_range": "Jan 2024 – May 2024",
+      "bullets": [
+        "Built and maintained REST APIs using C#, Python, and .NET MVC, including request validation, error-response design, and integration with PostgreSQL, Oracle, and MongoDB.",
+        "Implemented JWT authentication and role-based access controls to secure internal enterprise modules across multiple database backends.",
+        "Developed Flask backends with custom middleware for logging, error handling, and consistent API response contracts across microservices."
+      ],
+      "active": true
+    },
+    {
+      "id": "exp_3",
+      "company": "Avatron Industries Pvt Ltd",
+      "location": "Pune, India",
+      "role": "Data Analyst Intern",
+      "date_range": "Sep 2023 – Dec 2023",
+      "bullets": [
+        "Automated data workflows with Power BI and SQL, boosting operational efficiency and real-time analytics capabilities by 15%; designed interactive KPI dashboards tracking production output, defect trends, and shift-level performance.",
+        "Applied predictive modelling and statistical analysis (SPSS) to forecast operational risks, enabling informed business decisions for ops leadership.",
+        "Collaborated with cross-functional teams on AWS cloud platforms to deliver data-driven insights for critical production projects."
+      ],
+      "active": true
+    },
+    {
+      "id": "exp_4",
+      "company": "NK Technologies Pvt Ltd",
+      "location": "Pune, India",
+      "role": "Graduate Intern – Python Developer",
+      "date_range": "Jan 2023 – May 2023",
+      "bullets": [
+        "Built multi-source data ingestion pipelines (Python, Pandas, SQL) and scikit-learn classification models for behavioural risk detection, improving analytics throughput by 10%.",
+        "Automated reporting workflows to improve operational efficiency and ensure data quality and compliance across business units."
+      ],
+      "active": true
+    },
+    {
+      "company": "CeADAR – Ireland's National AI Research Centre",
+      "location": "Dublin, Ireland",
+      "role": "Data Scientist Intern",
+      "date_range": "Jan 2025 – Present",
+      "bullets": [
+        "Engineered end-to-end RAG pipeline (Qdrant vector DB + Qwen LLM on Google Cloud TPU VMs) for AIRRVie, an AI-powered agricultural assistant; applied geospatial feature engineering to enrich location-aware queries.",
+        "Built LLM-as-a-Judge evaluation pipeline (Claude Haiku + Langfuse) to score and filter a 10,000+ record Vietnamese agricultural QA dataset, structuring entity relationships in Neo4j knowledge graphs.",
+        "Reduced end-to-end LLM response latency by ~35% via max_tokens tuning, streaming optimisation, and fixing a Qwen timeout truncation bug; ensured data quality and reliability across pipeline outputs.",
+        "Resolved PostgreSQL connection pool exhaustion under 50+ concurrent users through load balancing; built network latency profiler benchmarking FastAPI, PostgreSQL, Qdrant (~120ms baseline), and Qwen TPU across 5 concurrency levels.",
+        "Diagnosed HTTP/gRPC protocol mismatch causing TPU health probe failures, restoring full service observability."
+      ],
+      "active": true,
+      "id": "experience_5"
+    }
+  ],
+  "projects": [
+    {
+      "id": "proj_1",
+      "title": "Wildfire Predictive Modelling Platform",
+      "date": "2025",
+      "tech": "R, Python, FastAPI, Logistic Regression, Geospatial Analysis, REST API",
+      "tech_short": "R, Python, FastAPI",
+      "bullets": [
+        "Processed 2.3M+ wildfire records (1992–2020); applied geospatial feature engineering on climate and region variables; trained logistic regression model in R with full EDA and data visualization outputs.",
+        "Deployed model via FastAPI endpoints returning real-time fire-risk probability estimates; exposed summary stats through an API layer for Power BI dashboard consumption."
+      ],
+      "bullet_short": "Built wildfire risk prediction platform with geospatial analysis and FastAPI.",
+      "paper_url": null,
+      "active": true
+    },
+    {
+      "id": "proj_2",
+      "title": "Customer Feedback Insights Assistant",
+      "date": "2025",
+      "tech": "Python, OpenAI API, LangChain, RAG, Neo4j, SQL, Power BI",
+      "tech_short": "Python, LangChain, Neo4j",
+      "bullets": [
+        "Built LLM analytics tool with RAG pipeline using chunked embeddings for semantic search and sentiment clustering; modelled topic/entity relationships in Neo4j.",
+        "Exported structured outputs to SQL and linked with Power BI dashboards, delivering stakeholder-facing business intelligence reports."
+      ],
+      "bullet_short": "Developed LLM-powered feedback analytics tool with Neo4j and Power BI.",
+      "paper_url": null,
+      "active": true
+    },
+    {
+      "id": "proj_3",
+      "title": "Full-Stack Rental & Purchase Web Application",
+      "date": "2024",
+      "tech": "Python (Flask), PostgreSQL, REST APIs, JWT",
+      "tech_short": "Flask, PostgreSQL",
+      "bullets": [
+        "Designed REST APIs for inventory, rental/purchase actions, and order management; implemented JWT auth and role-based access; created PostgreSQL stored procedures for transaction logging."
+      ],
+      "bullet_short": "Built full-stack rental platform with Flask and PostgreSQL.",
+      "paper_url": null,
+      "active": true
+    }
+  ],
+  "extracurricular": [
+    {
+      "text": "Worked in NSS (National Service Scheme)"
+    },
+    {
+      "id": "extra_2",
+      "text": "Participated in Badminton Nationals",
+      "active": true
+    }
+  ]
+}

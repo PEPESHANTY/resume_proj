@@ -1,0 +1,30 @@
+{
+  "font_name": "Calibri",
+  "font_size": 10,
+  "link_color": "0070C0",
+  "name_size": 18,
+  "tag_size": 10.5,
+  "contact_size": 9,
+  "page_margins": {
+    "top": 0.5,
+    "bottom": 0.25,
+    "left": 0.4,
+    "right": 0.4
+  },
+  "section_order": [
+    "summary",
+    "skills",
+    "education",
+    "certifications",
+    "experience",
+    "projects",
+    "extracurricular"
+  ],
+  "include_summary": true,
+  "include_extracurricular": true,
+  "skills_label_width": 2.1,
+  "bullet_indent": 0.2,
+  "max_certs_1page": 4,
+  "max_projects_1page": 3,
+  "page_size": "letter"
+}

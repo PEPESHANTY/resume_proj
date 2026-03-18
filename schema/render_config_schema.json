@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Render Config",
+  "description": "Per-user formatting preferences. Merged with tailored data at render time. Never touches the content.",
+  "type": "object",
+  "properties": {
+    "font_name":       { "type": "string",  "default": "Calibri" },
+    "font_size":       { "type": "number",  "default": 10 },
+    "link_color":      { "type": "string",  "default": "0070C0" },
+    "name_size":       { "type": "number",  "default": 18 },
+    "tag_size":        { "type": "number",  "default": 10.5 },
+    "contact_size":    { "type": "number",  "default": 9 },
+    "page_margins": {
+      "type": "object",
+      "properties": {
+        "top":    { "type": "number", "default": 0.5 },
+        "bottom": { "type": "number", "default": 0.25 },
+        "left":   { "type": "number", "default": 0.4 },
+        "right":  { "type": "number", "default": 0.4 }
+      }
+    },
+    "section_order": {
+      "type": "array",
+      "description": "Order of CV sections. Renderer follows this sequence.",
+      "items": { "type": "string" },
+      "default": ["summary", "skills", "education", "certifications", "experience", "projects", "extracurricular"]
+    },
+    "include_summary":        { "type": "boolean", "default": true },
+    "include_extracurricular": { "type": "boolean", "default": true },
+    "skills_label_width":     { "type": "number",  "default": 2.1, "description": "Width in inches for skill category label column" },
+    "bullet_indent":          { "type": "number",  "default": 0.2, "description": "Bullet left indent in inches" },
+    "max_certs_1page":        { "type": "integer", "default": 4 },
+    "max_projects_1page":     { "type": "integer", "default": 3 },
+    "page_size":              { "type": "string",  "default": "letter", "enum": ["letter", "a4"] }
+  }
+}

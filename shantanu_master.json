@@ -1,0 +1,191 @@
+{
+  "personal": {
+    "name": "SHANTANU BHUTE",
+    "title": "Data Scientist  |  AI/ML Engineer  |  Software Engineer",
+    "location": "Dublin, Ireland",
+    "email": "shantanubhute@gmail.com",
+    "phone": "+353 899476612",
+    "linkedin": {
+      "url": "https://www.linkedin.com/in/shantanubhute/",
+      "display": "LinkedIn"
+    },
+    "github": {
+      "url": "https://github.com/PEPESHANTY",
+      "display": "GitHub"
+    }
+  },
+
+  "summary": "MSc Computer Science graduate (UCD, First Class Honours) with hands-on experience in data science, machine learning, and AI engineering. Skilled in building end-to-end ML pipelines, RAG systems, and LLM-integrated applications. Proficient in Python, SQL, Java, and cloud platforms (AWS, Azure). Proven ability to deliver scalable, production-ready solutions across data engineering, NLP, and computer vision.",
+
+  "skills": {
+    "full": [
+      { "category": "Languages",                    "items": "Python, SQL, Java, R, Bash, HTML, CSS" },
+      { "category": "Frameworks",                   "items": "TensorFlow, PyTorch, scikit-learn, Flask, Streamlit, Spring Boot, Machine Learning" },
+      { "category": "GenAI & LLM Tools",            "items": "OpenAI API, LangChain, Hugging Face Hub, Prompt Engineering, Statistical Modelling" },
+      { "category": "Databases",                    "items": "PostgreSQL, MySQL, MongoDB, Redis, AWS Redshift, AWS RDS" },
+      { "category": "Cloud & MLOps",                "items": "AWS (SageMaker, Lambda, S3, EC2, RDS), Azure ML, Docker, Kubernetes, MLflow, Edge AI" },
+      { "category": "Data Engineering & Pipelines", "items": "Apache Airflow, Spark, Kafka, Pandas, NumPy, AWS Glue, Prompt Tuning, ETL Workflows" },
+      { "category": "Visualization & Reporting",    "items": "Power BI, Matplotlib, Seaborn, Plotly, ggplot2" },
+      { "category": "ML & Data Science",            "items": "Python, R, pandas, NumPy, TensorFlow, PyTorch, scikit-learn, ggplot2" },
+      { "category": "Others",                       "items": "REST APIs, FastAPI, OpenCV, NLP, Model Deployment (API & Streamlit), Git, OpenCV" }
+    ],
+    "compact": [
+      { "category": "Languages",    "items": "Python, SQL, Java, R, Bash" },
+      { "category": "ML & AI",      "items": "TensorFlow, PyTorch, scikit-learn, LangChain, OpenAI API, Hugging Face, NLP, Computer Vision" },
+      { "category": "Data & Cloud", "items": "Airflow, Spark, Kafka, Pandas, AWS (SageMaker, Lambda, S3, Redshift), Azure ML, Docker, MLflow" },
+      { "category": "Visualization","items": "Power BI, Matplotlib, Seaborn, Plotly" },
+      { "category": "Tools",        "items": "Streamlit, Flask, FastAPI, Spring Boot, REST APIs, Git, OpenCV, PostgreSQL, MongoDB" }
+    ]
+  },
+
+  "education": [
+    {
+      "degree":      "Master of Science in Computer Science",
+      "institution": "University College Dublin, Ireland",
+      "honors":      "First Class with Honors",
+      "grade":       "(1:1)",
+      "date":        "Sept 2024 – Sept 2025",
+      "modules":     "Cloud Computing, Multi-Agent Systems, Distributed Systems, Big Data Programming,\nGenerative AI, RDBMS, Machine Learning, Enterprise & Innovation"
+    },
+    {
+      "degree":      "Bachelor of Engineering in Computer Science with Honours in AI-ML",
+      "institution": "Savitribai Phule Pune University, India",
+      "honors":      "First Class with Honors",
+      "grade":       "CGPA: 8.97/10",
+      "date":        "Aug 2019 – May 2023",
+      "modules":     "Object-Oriented Programming, Cloud Computing, Blockchain, AI-ML, Web Technologies"
+    }
+  ],
+
+  "certifications": [
+    {
+      "name":      "AWS Certified Cloud Practitioner",
+      "link_text": "Certified Badge",
+      "url":       "https://www.credly.com/badges/e85ed162-77af-455a-b9e4-61b12626cea3/linked_in_profile",
+      "date":      "Dec 2024"
+    },
+    {
+      "name":      "Data Science Course: UNIVERSITY OF MICHIGAN",
+      "link_text": "Certification link",
+      "url":       "https://www.coursera.org/account/accomplishments/verify/R9WBDMY72N7S",
+      "date":      "Dec 2023"
+    },
+    {
+      "name":      "1Z0-071: Oracle Database SQL Certification",
+      "link_text": "Certified Badge",
+      "url":       "https://catalog-education.oracle.com/ords/certview/sharebadge?id=EF592A9A40985E62B928AC4BD900A4F92CECC465A9BDA5699F83A359A03486B1",
+      "date":      "Aug 2024"
+    },
+    {
+      "name":      "AWS Academy Cloud Architecting and Accreditation",
+      "link_text": "Certification links",
+      "url":       "https://docs.google.com/document/d/1f6vrpOaq0IW1NCCpuT2LzgXvasZiekhpjVQEKVzqVzY/edit?tab=t.0#heading=h.gh8vm1wg984a",
+      "date":      "May 2022"
+    },
+    {
+      "name":      "Linux Fundamentals",
+      "link_text": "Certification link",
+      "url":       "https://www.coursera.org/account/accomplishments/verify/ZFJQKNXQ8BSZ",
+      "date":      "Mar 2022"
+    }
+  ],
+
+  "experience": [
+    {
+      "company":    "CeADAR – Ireland's Centre for Applied AI",
+      "location":   "Dublin, Ireland",
+      "role":       "Data Scientist Intern",
+      "date_range": "May 2025 – Present",
+      "bullets": [
+        "Designed and deployed a Retrieval-Augmented Generation (RAG) pipeline using LangChain, OpenAI, and Qdrant to enable domain-specific knowledge retrieval from PDFs and rice/agriculture websites",
+        "Built a Streamlit and React based chatbot UI with memory, citations, and multilingual (English & Vietnamese) support, collaborating closely with cross-functional teams",
+        "Automated PDF/web ingestion pipelines with chunking, embeddings (OpenAI/Qwen), metadata enrichment, and Qdrant storage, and implemented evaluation workflows using RAGAS to validate retrieval accuracy",
+        "Developed a computer vision model using PyTorch to classify and label multiple rice disease varieties from field images, applying CNN-based architectures and transfer learning for early crop disease detection"
+      ],
+      "bullets_short": [
+        "Built production-grade RAG pipeline (LangChain, OpenAI, Qdrant) for domain-specific agricultural knowledge retrieval with multilingual (English/Vietnamese) support and RAGAS-validated benchmarking",
+        "Automated PDF/web ingestion pipelines (chunking, embeddings, Qdrant/Supabase storage) and built Streamlit/React chatbot UI with persistent memory and source citations",
+        "Trained CNN-based computer vision model (PyTorch, transfer learning) for multi-class rice disease classification from field images"
+      ]
+    },
+    {
+      "company":    "LTIMindtree",
+      "location":   "Mumbai, India",
+      "role":       "Software Engineer – SQL, Java & AI Projects (Citibank Client)",
+      "date_range": "Jun 2024 – Aug 2024",
+      "bullets": [
+        "Optimized Oracle SQL queries and backend pipelines, improving data retrieval performance for Citibank's reporting systems",
+        "Developed Java modules for intelligent data validation and integrated backend checks with early-stage anomaly detection logic",
+        "Explored prompt engineering and Python-based model testing to support internal AI-assisted decision modules",
+        "Designed and validated ML pipelines with quality checks and logging on AWS (Lambda + S3), ensuring data integrity and anomaly detection in low-latency environments"
+      ],
+      "bullets_short": [
+        "Optimized Oracle SQL queries and backend pipelines for Citibank's reporting systems; developed Java data validation modules with anomaly detection",
+        "Designed and validated ML pipelines with quality checks and logging on AWS (Lambda + S3) for low-latency anomaly detection"
+      ]
+    },
+    {
+      "company":    "Cognizant Technology Solutions",
+      "location":   "Bangalore, India",
+      "role":       "Programmer Analyst Trainee – Kohl's Corp, US",
+      "date_range": "Dec 2023 – May 2024",
+      "bullets": [
+        "Built conversational AI chatbot using Google Dialogflow, trained on CRM use cases to automate customer query prediction",
+        "Developed backend services using Java and Spring Boot to integrate chatbot intelligence with CRM workflows",
+        "Improved dynamic routing and response accuracy using Avaya Aura and Genesys Cloud with integrated AI triggers",
+        "Designed intent classification strategies using NLP preprocessing and training phrase optimization, improving chatbot prediction accuracy by 18% across varied customer input"
+      ],
+      "bullets_short": [
+        "Built Dialogflow conversational AI chatbot integrated with CRM workflows via Java/Spring Boot and Avaya Aura/Genesys Cloud",
+        "Improved chatbot prediction accuracy by 18% through NLP intent classification redesign and training phrase optimization"
+      ]
+    }
+  ],
+
+  "projects": [
+    {
+      "title":        "RiceAI Expert – Sustainable Farming AI Chatbot",
+      "date":         "Dec 2025",
+      "tech":         "Technologies: LangChain, LangGraph, Qdrant, OpenAI/Qwen Embeddings, Streamlit, Supabase, Neo4j, RAGAS, Git",
+      "tech_short":   "LangChain, LangGraph, Qdrant, OpenAI/Qwen, Streamlit, Neo4j, RAGAS",
+      "bullets": [
+        "Designed a full-stack RAG assistant for rice farming, integrating agricultural PDFs and web content with hybrid retrieval using LangChain and Qdrant",
+        "Extended to GraphRAG (LangGraph + Neo4j) for explainable, knowledge-graph-enhanced retrieval with source traceability",
+        "Delivered multilingual support (English & Vietnamese), automated ingestion pipelines, and RAGAS-validated quality benchmarking"
+      ],
+      "bullet_short": "Full-stack RAG assistant for rice farming with GraphRAG (LangGraph + Neo4j), multilingual support, and RAGAS-benchmarked retrieval quality.",
+      "paper_url":    null
+    },
+    {
+      "title":        "ScholarGenie – LLM-Powered Research Paper Discovery Agent",
+      "date":         "March 2024",
+      "tech":         "Technologies: Python, LangChain, OpenAI GPT-4, arXiv API, Semantic Scholar API, Streamlit",
+      "tech_short":   "Python, LangChain, GPT-4, arXiv API, Streamlit",
+      "bullets": [
+        "Built an LLM-powered academic discovery tool integrating arXiv and Semantic Scholar APIs for real-time paper search, keyword filtering, and GPT-4-generated plain-language summaries",
+        "Deployed with Streamlit for interactive exploration of AI-generated research summaries and trend analysis"
+      ],
+      "bullet_short": "LLM-powered paper discovery tool integrating arXiv and Semantic Scholar APIs with GPT-4 summaries and interactive Streamlit interface.",
+      "paper_url":    null
+    },
+    {
+      "title":        "Face Verification using Siamese Convolutional Neural Network",
+      "date":         "Research Paper, June 2023",
+      "tech":         "Technologies: Deep Learning, TensorFlow, Keras, Python, NumPy, OpenCV",
+      "tech_short":   "TensorFlow, Keras, OpenCV",
+      "bullets": [
+        "Developed a Siamese CNN for one-shot face verification, achieving 91.25% accuracy classifying 13,000 unique facial images; outperformed KNN and random-guess baselines",
+        "Applied data augmentation, TensorBoard experiment tracking, and modular evaluation pipelines to ensure reproducibility and deployment readiness"
+      ],
+      "bullet_short": "Achieved 91.25% accuracy on 13,000 facial images using one-shot Siamese CNN; outperformed KNN baseline.",
+      "paper_url":    "https://drive.google.com/file/d/1FjL5FX5ht4I_JSSQODYNlO884R90YfNc/view?usp=sharing"
+    }
+  ],
+
+  "extracurricular": [
+    "Simon Community: Volunteered in plantation and gardening drives, contributing to community welfare and environmental care",
+    "NSS (National Service Scheme): Led community drives including blood donation camps, fostering civic engagement",
+    "Microsoft Space AI Event: Participated with Team CeADAR, gaining exposure to frontier AI research and industry collaboration",
+    "Badminton: Represented school and college at national level; team captain demonstrating leadership and performance under pressure"
+  ]
+}

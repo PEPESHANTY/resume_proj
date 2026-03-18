@@ -1,0 +1,147 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Master Profile — Knowledge Base",
+  "description": "Complete user profile. Stores EVERYTHING the user has ever done. The Tailor Agent picks subsets per JD.",
+  "type": "object",
+  "required": ["personal", "skills_pool", "education", "experience", "projects"],
+  "properties": {
+
+    "personal": {
+      "type": "object",
+      "required": ["name", "title", "location", "email", "phone"],
+      "properties": {
+        "name":     { "type": "string", "description": "Full name in UPPERCASE e.g. JOHN DOE" },
+        "title":    { "type": "string", "description": "Default headline e.g. 'Data Scientist | ML Engineer'" },
+        "title_variants": {
+          "type": "object",
+          "description": "Role-specific headline variants. Keys: generic, ai_llm, data, analytics, swe, research",
+          "additionalProperties": { "type": "string" }
+        },
+        "location": { "type": "string" },
+        "email":    { "type": "string" },
+        "phone":    { "type": "string" },
+        "links": {
+          "type": "object",
+          "description": "All profile links. Renderer picks linkedin + github by default.",
+          "properties": {
+            "linkedin":  { "type": "object", "properties": { "url": {"type":"string"}, "display": {"type":"string"} } },
+            "github":    { "type": "object", "properties": { "url": {"type":"string"}, "display": {"type":"string"} } },
+            "portfolio": { "type": ["object","null"], "properties": { "url": {"type":"string"}, "display": {"type":"string"} } },
+            "other":     { "type": "array", "items": { "type": "object", "properties": { "label": {"type":"string"}, "url": {"type":"string"}, "display": {"type":"string"} } } }
+          }
+        }
+      }
+    },
+
+    "summary_variants": {
+      "type": "object",
+      "description": "Pre-written summary variants keyed by role focus. Tailor Agent picks best match or rewrites.",
+      "additionalProperties": { "type": "string" }
+    },
+
+    "skills_pool": {
+      "type": "array",
+      "description": "ALL skills the user knows, grouped by category. Tailor Agent selects/reorders per JD.",
+      "items": {
+        "type": "object",
+        "required": ["category", "items"],
+        "properties": {
+          "category": { "type": "string" },
+          "items":    { "type": "array", "items": { "type": "string" }, "description": "Individual skill names" }
+        }
+      }
+    },
+
+    "education": {
+      "type": "array",
+      "description": "All education entries, most recent first.",
+      "items": {
+        "type": "object",
+        "required": ["id", "degree", "institution", "date"],
+        "properties": {
+          "id":          { "type": "string", "description": "Unique ID e.g. 'edu_1'" },
+          "degree":      { "type": "string" },
+          "institution": { "type": "string" },
+          "honors":      { "type": ["string","null"] },
+          "grade":       { "type": ["string","null"] },
+          "date":        { "type": "string" },
+          "modules":     { "type": ["string","null"], "description": "Relevant modules. Use \\n for line breaks." },
+          "active":      { "type": "boolean", "default": true, "description": "Whether to include in CVs by default" }
+        }
+      }
+    },
+
+    "certifications": {
+      "type": "array",
+      "description": "All certifications. Each has an ID for selection.",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "date"],
+        "properties": {
+          "id":        { "type": "string", "description": "Unique ID e.g. 'cert_1'" },
+          "name":      { "type": "string" },
+          "link_text": { "type": "string", "description": "Anchor text for hyperlink" },
+          "url":       { "type": ["string","null"] },
+          "date":      { "type": "string" },
+          "active":    { "type": "boolean", "default": true }
+        }
+      }
+    },
+
+    "experience": {
+      "type": "array",
+      "description": "ALL work experience — the full knowledge base. Tailor Agent picks subset.",
+      "items": {
+        "type": "object",
+        "required": ["id", "company", "role", "date_range", "bullets"],
+        "properties": {
+          "id":            { "type": "string", "description": "Unique ID e.g. 'exp_ceadar'" },
+          "company":       { "type": "string" },
+          "location":      { "type": "string" },
+          "role":          { "type": "string" },
+          "date_range":    { "type": "string" },
+          "bullets":       { "type": "array", "items": { "type": "string" }, "description": "All bullets for this role" },
+          "bullet_variants": {
+            "type": "object",
+            "description": "Alternative bullet sets keyed by focus area (e.g. 'ai_focused', 'analytics_focused')",
+            "additionalProperties": { "type": "array", "items": { "type": "string" } }
+          },
+          "active":        { "type": "boolean", "default": true }
+        }
+      }
+    },
+
+    "projects": {
+      "type": "array",
+      "description": "ALL projects — knowledge base. Tailor Agent picks 2-3 per JD.",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "tech", "bullets"],
+        "properties": {
+          "id":           { "type": "string", "description": "Unique ID e.g. 'proj_riceai'" },
+          "title":        { "type": "string" },
+          "date":         { "type": "string" },
+          "tech":         { "type": "string", "description": "Full tech string" },
+          "tech_short":   { "type": ["string","null"], "description": "Shorter tech for 1-page" },
+          "bullets":      { "type": "array", "items": { "type": "string" } },
+          "bullet_short": { "type": ["string","null"], "description": "Single-line summary for 1-page" },
+          "paper_url":    { "type": ["string","null"] },
+          "active":       { "type": "boolean", "default": true }
+        }
+      }
+    },
+
+    "extracurricular": {
+      "type": "array",
+      "description": "Optional extracurricular items.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id":     { "type": "string" },
+          "text":   { "type": "string" },
+          "active": { "type": "boolean", "default": true }
+        }
+      }
+    }
+  }
+}
