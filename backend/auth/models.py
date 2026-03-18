@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 import uuid
 
 from backend.config import DATABASE_URL
+from backend.utils import upload_to_r2
 
 Base = declarative_base()
 
@@ -39,6 +40,15 @@ class User(Base):
         d = self.storage_dir() / "output"
         d.mkdir(parents=True, exist_ok=True)
         return d
+
+    def save_to_storage(self, file_path, object_name):
+        """Upload file directly to R2 without local storage."""
+        # Upload to R2
+        success = upload_to_r2(str(file_path), f"users/{self.id}/{object_name}")
+        if success:
+            print(f"File {file_path} successfully uploaded to R2 as users/{self.id}/{object_name}.")
+        else:
+            raise Exception(f"Failed to upload {file_path} to R2.")
 
 
 engine = create_engine(DATABASE_URL, echo=False)

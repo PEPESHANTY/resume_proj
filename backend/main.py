@@ -3,17 +3,22 @@ FastAPI main application — ties auth, agents, renderer together.
 """
 import json
 import os
+import tempfile
 from pathlib import Path
 
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 
 from backend.auth.models import User, init_db, get_db
 from backend.auth.routes import router as auth_router, get_current_user
 from backend.agents import orchestrator, extractor, formatter
 from backend.renderer.build_cv_dynamic import render_cv
+from backend.utils import (
+    r2_enabled, r2_read_json, r2_write_json,
+    r2_read_bytes, r2_write_bytes, r2_exists, upload_to_r2,
+)
 
 app = FastAPI(title="CV Builder API", version="1.0.0")
 
@@ -40,6 +45,7 @@ def startup():
 class ChatRequest(BaseModel):
     message: str
     chat_history: list[dict] = []
+    company: str = "GENERIC"
 
 class ChatResponse(BaseModel):
     reply: str
@@ -69,36 +75,43 @@ class ProfileUpdateRequest(BaseModel):
 
 
 # ─────────────────────────────────────────────
-# Profile helpers
+# Profile helpers — R2 backed (no local storage)
 # ─────────────────────────────────────────────
 
+def _r2_key(user: User, filename: str) -> str:
+    """Build R2 object key for a user file."""
+    return f"users/{user.username}/{filename}"
+
+
 def _load_profile(user: User) -> dict | None:
-    p = user.master_path()
-    if p.exists():
-        return json.loads(p.read_text(encoding="utf-8"))
-    return None
+    return r2_read_json(_r2_key(user, "master_profile.json"))
+
 
 def _save_profile(user: User, profile: dict):
-    user.master_path().write_text(json.dumps(profile, indent=2, ensure_ascii=False), encoding="utf-8")
+    ok = r2_write_json(_r2_key(user, "master_profile.json"), profile)
+    if not ok:
+        raise HTTPException(status_code=500, detail="Failed to save profile to R2")
+
 
 def _load_config(user: User) -> dict:
-    p = user.render_config_path()
-    if p.exists():
-        return json.loads(p.read_text(encoding="utf-8"))
-    return {}
+    data = r2_read_json(_r2_key(user, "render_config.json"))
+    return data or {}
+
 
 def _save_config(user: User, config: dict):
-    user.render_config_path().write_text(json.dumps(config, indent=2), encoding="utf-8")
+    ok = r2_write_json(_r2_key(user, "render_config.json"), config)
+    if not ok:
+        raise HTTPException(status_code=500, detail="Failed to save config to R2")
+
 
 def _load_tailored(user: User, company: str) -> dict | None:
-    p = user.storage_dir() / f"tailored_{company.upper()}.json"
-    if p.exists():
-        return json.loads(p.read_text(encoding="utf-8"))
-    return None
+    return r2_read_json(_r2_key(user, f"tailored_{company.upper()}.json"))
+
 
 def _save_tailored(user: User, company: str, data: dict):
-    p = user.storage_dir() / f"tailored_{company.upper()}.json"
-    p.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    ok = r2_write_json(_r2_key(user, f"tailored_{company.upper()}.json"), data)
+    if not ok:
+        raise HTTPException(status_code=500, detail="Failed to save tailored data to R2")
 
 
 # ─────────────────────────────────────────────
@@ -180,7 +193,7 @@ async def chat(
                 }
                 section = section_map.get(action, "")
 
-                print(f"[EDIT] action={action}, section={section}, target_id={target_id}, updates={updates}")
+                print(f"[EDIT] action={action}, section={section}, target_id={target_id}, updates={json.dumps(updates, default=str)[:500]}")
 
                 if action.startswith("add_") and section and section != "personal":
                     items = profile.get(section, [])
@@ -190,6 +203,7 @@ async def chat(
                             text = updates.get("text", str(updates))
                             new_id = f"extra_{len(items)+1}"
                             items.append({"id": new_id, "text": text, "active": True})
+                            print(f"[ADD] Added extracurricular: {text[:60]}")
                         else:
                             if not updates.get("id"):
                                 updates["id"] = f"{section}_{len(items)+1}"
@@ -198,21 +212,98 @@ async def chat(
                     elif isinstance(updates, str) and section == "extracurricular":
                         new_id = f"extra_{len(items)+1}"
                         items.append({"id": new_id, "text": updates, "active": True})
+                        print(f"[ADD] Added extracurricular (str): {updates[:60]}")
+                    elif isinstance(updates, list) and section == "extracurricular":
+                        # LLM returned a list of items — add each one
+                        for u in updates:
+                            text = u.get("text", str(u)) if isinstance(u, dict) else str(u)
+                            new_id = f"extra_{len(items)+1}"
+                            items.append({"id": new_id, "text": text, "active": True})
+                            print(f"[ADD] Added extracurricular from list: {text[:60]}")
                     profile[section] = items
 
-                elif action.startswith("edit_") and section and target_id:
+                elif action.startswith("edit_") and section:
                     if section == "personal":
                         profile["personal"].update(updates)
                     else:
                         items = profile.get(section, [])
-                        for item in items:
-                            if item.get("id") == target_id:
-                                item.update(updates)
-                                break
+                        # Ensure all items have IDs
+                        for idx, item in enumerate(items):
+                            if not item.get("id"):
+                                item["id"] = f"{section}_{idx+1}"
+
+                        matched = False
+                        # First try exact ID match
+                        if target_id:
+                            for item in items:
+                                if item.get("id") == target_id:
+                                    item.update(updates)
+                                    matched = True
+                                    break
+
+                        # Fallback: fuzzy text match for extracurricular/cert items
+                        if not matched and section in ("extracurricular", "certifications"):
+                            search_text = (updates.get("text", "") or updates.get("original_text", "") or
+                                          str(target_id) or "").lower()
+                            # Try matching by keyword from the target_id or update text
+                            for item in items:
+                                item_text = (item.get("text", "") or item.get("name", "")).lower()
+                                # Match if target_id appears in text, or if updates reference matches
+                                if target_id and target_id.lower() in item_text:
+                                    item.update(updates)
+                                    matched = True
+                                    break
+                                # Match by keyword overlap
+                                if search_text:
+                                    search_words = set(search_text.split())
+                                    item_words = set(item_text.split())
+                                    if len(search_words & item_words) >= 2:
+                                        item.update(updates)
+                                        matched = True
+                                        break
+
+                        # Last resort for extracurricular: match by index hint in target_id
+                        if not matched and section == "extracurricular" and target_id:
+                            # Try extracting index from target_id like "extra_3" or "3"
+                            import re as _re
+                            idx_match = _re.search(r'(\d+)', str(target_id))
+                            if idx_match:
+                                idx = int(idx_match.group(1)) - 1
+                                if 0 <= idx < len(items):
+                                    items[idx].update(updates)
+                                    matched = True
+
+                        if not matched:
+                            print(f"[WARN] Could not find item to edit: section={section}, target_id={target_id}")
 
                 elif action.startswith("remove_") and section and target_id:
                     items = profile.get(section, [])
-                    profile[section] = [it for it in items if it.get("id") != target_id]
+                    original_len = len(items)
+                    # Try exact ID match first
+                    remaining = [it for it in items if it.get("id") != target_id]
+                    if len(remaining) == original_len and section == "extracurricular":
+                        # Exact ID didn't match — try fuzzy text match
+                        import re as _re
+                        remaining = []
+                        removed = False
+                        for it in items:
+                            item_text = (it.get("text", "") or "").lower()
+                            if not removed and target_id.lower() in item_text:
+                                removed = True
+                                print(f"[REMOVE] Fuzzy matched and removed: {item_text[:60]}")
+                                continue
+                            remaining.append(it)
+                        if not removed:
+                            # Try index extraction from target_id
+                            idx_match = _re.search(r'(\d+)', str(target_id))
+                            if idx_match:
+                                idx = int(idx_match.group(1)) - 1
+                                if 0 <= idx < len(items):
+                                    remaining = items[:idx] + items[idx+1:]
+                                    print(f"[REMOVE] Removed by index {idx}")
+                    else:
+                        print(f"[REMOVE] Exact ID match removed item with id={target_id}")
+                    profile[section] = remaining
 
                 elif action == "add_skill" and updates:
                     pool = profile.get("skills_pool", [])
@@ -245,10 +336,75 @@ async def chat(
                         s["items"] = items
                     profile["skills_pool"] = pool
 
+                elif action == "update_skill" and updates:
+                    pool = profile.get("skills_pool", [])
+                    cat = updates.get("category", "Other")
+                    skill_items = updates.get("items", [])
+                    for s in pool:
+                        if s.get("category", "").lower() == cat.lower():
+                            s["items"] = skill_items
+                            break
+                    profile["skills_pool"] = pool
+
+                elif action == "update_experience" and updates:
+                    exp_id = updates.get("id")
+                    new_data = updates.get("data", {})
+                    for exp in profile.get("experience", []):
+                        if exp.get("id") == exp_id:
+                            exp.update(new_data)
+                            break
+                    profile["experience"] = profile.get("experience", [])
+
+                elif action == "update_course_module" and updates:
+                    edu_id = updates.get("id")
+                    new_modules = updates.get("modules", [])
+                    for edu in profile.get("education", []):
+                        if edu.get("id") == edu_id:
+                            edu["modules"] = new_modules
+                            break
+                    profile["education"] = profile.get("education", [])
+
+                elif action == "edit_summary" and updates:
+                    new_summary = updates.get("summary", "")
+                    if new_summary:
+                        profile["summary"] = new_summary
+
+                elif action == "edit_title" and updates:
+                    new_title = updates.get("title", "")
+                    if new_title:
+                        personal = profile.get("personal", {})
+                        personal["title"] = new_title
+                        profile["personal"] = personal
+
                 reply = edit_result.get("response_message", "Updated your profile.")
                 action_taken = action
                 data_updated = True
                 _save_profile(user, profile)
+
+                # ── Also propagate edits to tailored data (if exists) ──
+                active_company = req.company or "GENERIC"
+                tailored = _load_tailored(user, active_company)
+                if tailored:
+                    # Mirror the same field updates into tailored data
+                    if action == "edit_summary" and updates.get("summary"):
+                        tailored["summary"] = updates["summary"]
+                    elif action == "edit_title" and updates.get("title"):
+                        tp = tailored.get("personal", {})
+                        tp["title"] = updates["title"]
+                        tailored["personal"] = tp
+                    elif action == "edit_personal":
+                        tp = tailored.get("personal", {})
+                        tp.update(updates)
+                        tailored["personal"] = tp
+                    elif action in ("add_extracurricular", "edit_extracurricular", "remove_extracurricular"):
+                        tailored["extracurricular"] = profile.get("extracurricular", [])
+                    elif action in ("add_education", "edit_education", "remove_education"):
+                        tailored["education"] = profile.get("education", [])
+                    elif action in ("add_certification", "edit_certification", "remove_certification"):
+                        tailored["certifications"] = profile.get("certifications", [])
+                    elif action in ("add_skill", "remove_skill", "update_skill"):
+                        tailored["skills_pool"] = profile.get("skills_pool", [])
+                    _save_tailored(user, active_company, tailored)
 
     elif intent == "FORMAT_CHANGE":
         fmt_result = formatter.parse_format_request(message, config)
@@ -439,33 +595,80 @@ async def render(
     user: User = Depends(get_current_user),
 ):
     """Render tailored CV to .docx (and optionally .pdf)."""
+    print("Render request received with:", req)
     tailored = _load_tailored(user, req.company)
+    print("Loaded tailored data:", tailored)
     profile = _load_profile(user)
+    print("Loaded profile data:", profile)
     data = tailored or profile
     if not data:
+        print("No data to render.")
         raise HTTPException(status_code=400, detail="No data to render.")
 
     # Merge sections from profile that the tailor may not include
+    # ALWAYS prefer profile data for these sections (user edits go to profile first)
     if profile and data is not profile:
-        for key in ("extracurricular", "education", "certifications"):
-            if not data.get(key) and profile.get(key):
+        for key in ("extracurricular", "education", "certifications", "summary"):
+            if profile.get(key):
                 data[key] = profile[key]
+                print(f"Merged {key} from profile (always-sync).")
+        # Also sync personal fields (name, title, email, etc.)
+        if profile.get("personal"):
+            if not data.get("personal"):
+                data["personal"] = {}
+            for pkey in ("name", "title", "email", "phone", "location", "linkedin", "github"):
+                if profile["personal"].get(pkey):
+                    data["personal"][pkey] = profile["personal"][pkey]
 
     config = _load_config(user)
-    output_dir = str(user.output_dir())
+    print("Loaded render config:", config)
 
-    result = render_cv(data, mode=req.mode, company=req.company,
-                       config=config, output_dir=output_dir,
-                       export_pdf=req.export_pdf)
+    # Render to a temp directory, then upload to R2
+    import tempfile as _tempfile
+    with _tempfile.TemporaryDirectory() as tmp_dir:
+        try:
+            result = render_cv(data, mode=req.mode, company=req.company,
+                               config=config, output_dir=tmp_dir,
+                               export_pdf=req.export_pdf)
+            print("Render result:", result)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=f"Render failed: {str(e)}")
+
+        # Upload rendered files to R2
+        import os as _os
+        docx_filename = _os.path.basename(result["docx"]) if result.get("docx") else None
+        pdf_filename = _os.path.basename(result["pdf"]) if result.get("pdf") else None
+
+        if docx_filename and result.get("docx") and _os.path.exists(result["docx"]):
+            with open(result["docx"], "rb") as f:
+                r2_write_bytes(
+                    _r2_key(user, f"output/{docx_filename}"),
+                    f.read(),
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                )
+            print(f"Uploaded {docx_filename} to R2")
+
+        if pdf_filename and result.get("pdf") and _os.path.exists(result["pdf"]):
+            with open(result["pdf"], "rb") as f:
+                r2_write_bytes(
+                    _r2_key(user, f"output/{pdf_filename}"),
+                    f.read(),
+                    "application/pdf"
+                )
+            print(f"Uploaded {pdf_filename} to R2")
 
     return {
-        "docx_path": result["docx"],
+        "docx_path": result.get("docx"),
         "pdf_path": result.get("pdf"),
+        "docx_filename": docx_filename,
+        "pdf_filename": pdf_filename,
     }
 
 
 # ─────────────────────────────────────────────
-# File download endpoints
+# File download endpoints — served from R2
 # ─────────────────────────────────────────────
 
 @app.get("/download/{filename}")
@@ -473,16 +676,21 @@ async def download_file(
     filename: str,
     user: User = Depends(get_current_user),
 ):
-    """Download a generated file."""
-    file_path = user.output_dir() / filename
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="File not found")
+    """Download a generated file from R2."""
+    r2_key = _r2_key(user, f"output/{filename}")
+    file_bytes = r2_read_bytes(r2_key)
+    if file_bytes is None:
+        raise HTTPException(status_code=404, detail="File not found in R2")
 
     media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     if filename.endswith(".pdf"):
         media_type = "application/pdf"
 
-    return FileResponse(str(file_path), media_type=media_type, filename=filename)
+    return Response(
+        content=file_bytes,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 # ─────────────────────────────────────────────

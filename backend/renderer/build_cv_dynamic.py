@@ -45,6 +45,7 @@ DEFAULT_CONFIG = {
     "section_order": ["summary", "skills", "education", "certifications", "experience", "projects", "extracurricular"],
     "include_summary": True,
     "include_extracurricular": True,
+    "active": True,
     "skills_label_width": 2.1,
     "bullet_indent": 0.2,
     "max_certs_1page": 4,
@@ -172,11 +173,26 @@ def right_tab(para):
     pPr.append(tabs)
 
 
+def keep_with_next(para):
+    """Set 'Keep with next' on a paragraph so it won't be stranded at page bottom."""
+    pPr = para._element.get_or_add_pPr()
+    kwn = OxmlElement('w:keepNext')
+    pPr.append(kwn)
+
+
+def keep_together(para):
+    """Set 'Keep lines together' so a paragraph is never split across pages."""
+    pPr = para._element.get_or_add_pPr()
+    klt = OxmlElement('w:keepLines')
+    pPr.append(klt)
+
+
 def heading_el(doc, title, cfg, before=5, after=2):
     p = doc.add_paragraph()
     sp(p, before=before, after=after)
     bottom_border(p)
     r(p, title, bold=True, size=cfg["font_size"], font_name=cfg["font_name"])
+    keep_with_next(p)   # heading always stays with the content below it
     return p
 
 
@@ -237,11 +253,17 @@ def build_header(doc, personal, cfg, is_1page=False):
 def build_summary(doc, summary_text, cfg):
     if not summary_text or not cfg.get("include_summary", True):
         return
+
+    # Add dynamic update handling
     heading_el(doc, "PROFESSIONAL SUMMARY", cfg, before=4, after=2)
     p_sum = doc.add_paragraph()
     p_sum.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     sp(p_sum, before=0, after=2)
     r(p_sum, summary_text, size=cfg["font_size"], font_name=cfg["font_name"])
+
+    # Ensure `active` filtering is respected
+    if not cfg.get("active", True):
+        return
 
 
 def build_skills(doc, rows, cfg, is_1page=False):
@@ -296,8 +318,8 @@ def build_skills(doc, rows, cfg, is_1page=False):
 
 
 def build_certifications(doc, certs, cfg, sec_heading="COURSES AND CERTIFICATIONS", before=4):
-    heading_el(doc, sec_heading, cfg, before=before, after=2)
-    for cert in certs:
+    heading_el(doc, sec_heading, cfg, before=before, after=2)  # heading already has keep_with_next
+    for i, cert in enumerate(certs):
         name      = cert["name"]
         link_text = cert.get("link_text", "")
         url       = cert.get("url")
@@ -330,6 +352,9 @@ def build_certifications(doc, certs, cfg, sec_heading="COURSES AND CERTIFICATION
             r(p, name, size=cfg["font_size"], font_name=cfg["font_name"])
         tab_run(p, size=cfg["font_size"], font_name=cfg["font_name"])
         r(p, date, bold=True, size=cfg["font_size"], font_name=cfg["font_name"])
+        # Keep first cert bullet with heading so at least 2 items on same page
+        if i < 1 and len(certs) > 1:
+            keep_with_next(p)
 
 
 def build_education(doc, entries, cfg, before=4):
@@ -341,6 +366,7 @@ def build_education(doc, entries, cfg, before=4):
         r(p1, e["degree"], bold=True, size=cfg["font_size"], font_name=cfg["font_name"])
         tab_run(p1, size=cfg["font_size"], font_name=cfg["font_name"])
         r(p1, e["date"], bold=True, size=cfg["font_size"], font_name=cfg["font_name"])
+        keep_with_next(p1)  # degree stays with institution
 
         p2 = doc.add_paragraph()
         sp(p2, before=0, after=0)
@@ -354,6 +380,7 @@ def build_education(doc, entries, cfg, before=4):
             r(p2, e["grade"], bold=True, size=cfg["font_size"], font_name=cfg["font_name"])
 
         if e.get("modules"):
+            keep_with_next(p2)  # institution stays with modules
             p3 = doc.add_paragraph()
             sp(p3, before=0, after=2)
             p3.alignment = WD_ALIGN_PARAGRAPH.LEFT
@@ -372,14 +399,19 @@ def build_exp_entry(doc, exp, cfg):
       bold=True, size=cfg["font_size"], font_name=cfg["font_name"])
     tab_run(p_co, size=cfg["font_size"], font_name=cfg["font_name"])
     r(p_co, exp["date_range"], bold=True, size=cfg["font_size"], font_name=cfg["font_name"])
+    keep_with_next(p_co)   # company line stays with role
 
     p_role = doc.add_paragraph()
     sp(p_role, before=0, after=1)
     r(p_role, "Role: " + exp["role"], italic=True, size=cfg["font_size"], font_name=cfg["font_name"])
+    keep_with_next(p_role)  # role stays with first bullet
 
     bullets = exp.get("bullets", [])
-    for b in bullets:
-        bul(doc, b, cfg)
+    for i, b in enumerate(bullets):
+        p = bul(doc, b, cfg)
+        # Keep heading+role bound with at least 2 bullets on same page
+        if i < 1 and len(bullets) > 1:
+            keep_with_next(p)
 
 
 def build_project(doc, proj, cfg, short=False):
@@ -387,6 +419,7 @@ def build_project(doc, proj, cfg, short=False):
     sp(p_title, before=4, after=0)
     right_tab(p_title)
     r(p_title, proj["title"], bold=True, size=cfg["font_size"], font_name=cfg["font_name"])
+    keep_with_next(p_title)  # project title stays with tech line + bullets
 
     if proj.get("date"):
         date_str  = proj["date"]
@@ -420,6 +453,7 @@ def build_project(doc, proj, cfg, short=False):
         p_tech = doc.add_paragraph()
         sp(p_tech, before=0, after=1)
         r(p_tech, tech_str, italic=True, size=cfg["font_size"], font_name=cfg["font_name"])
+        keep_with_next(p_tech)  # tech line stays with first bullet
 
     if short:
         bullet_text = proj.get("bullet_short") or (proj["bullets"][0] if proj.get("bullets") else "")
@@ -429,31 +463,44 @@ def build_project(doc, proj, cfg, short=False):
             sp(p_b, before=0, after=1)
             r(p_b, bullet_text, size=cfg["font_size"], font_name=cfg["font_name"])
     else:
-        for b in proj.get("bullets", []):
-            bul(doc, b, cfg)
+        bullets = proj.get("bullets", [])
+        for i, b in enumerate(bullets):
+            p = bul(doc, b, cfg)
+            # Keep title+tech bound with at least 2 bullets
+            if i < 1 and len(bullets) > 1:
+                keep_with_next(p)
 
 
 # ─────────────────────────────────────────────
 # SECTION DISPATCHER (respects section_order from config)
 # ─────────────────────────────────────────────
 
+def _normalize_items(items):
+    """Ensure items is always a comma-separated string."""
+    if isinstance(items, list):
+        return ", ".join(str(i) for i in items)
+    if isinstance(items, str):
+        return items
+    return str(items) if items else ""
+
+
 def _get_skills_rows(data, is_1page):
-    """Extract skills as list of (category, items) tuples from either format."""
+    """Extract skills as list of (category, items_string) tuples from either format."""
     # Try skills_pool format first (array of {category, items})
     pool = data.get("skills_pool")
     if pool and isinstance(pool, list):
-        return [(s.get("category", "Other"), s.get("items", [])) for s in pool]
+        return [(s.get("category", "Other"), _normalize_items(s.get("items", ""))) for s in pool]
     # Fall back to skills dict format {full: [...], compact: [...]}
     skills = data.get("skills") or {}
     if isinstance(skills, dict):
         source = skills.get("compact", skills.get("full", [])) if is_1page else skills.get("full", skills.get("compact", []))
-        return [(s.get("category", s.get("label", "Other")), s.get("items", s.get("content", ""))) for s in source]
+        return [(s.get("category", s.get("label", "Other")), _normalize_items(s.get("items", s.get("content", "")))) for s in source]
     return []
 
 
 SECTION_BUILDERS = {
     "summary": lambda doc, data, cfg, is_1page: (
-        build_summary(doc, data.get("summary"), cfg) if not is_1page else None
+        build_summary(doc, data.get("summary"), cfg) if cfg.get("active", True) else None
     ),
     "skills": lambda doc, data, cfg, is_1page: (
         build_skills(
@@ -461,7 +508,7 @@ SECTION_BUILDERS = {
             _get_skills_rows(data, is_1page),
             cfg,
             is_1page=is_1page,
-        )
+        ) if cfg.get("active", True) else None
     ),
     "education": lambda doc, data, cfg, is_1page: (
         build_education(
@@ -469,7 +516,7 @@ SECTION_BUILDERS = {
             [{**e, "modules": None} for e in data["education"]] if is_1page else data["education"],
             cfg,
             before=3 if is_1page else 4,
-        )
+        ) if cfg.get("active", True) else None
     ),
     "certifications": lambda doc, data, cfg, is_1page: (
         build_certifications(
@@ -478,7 +525,7 @@ SECTION_BUILDERS = {
             cfg,
             sec_heading="CERTIFICATIONS" if is_1page else "COURSES AND CERTIFICATIONS",
             before=3 if is_1page else 4,
-        )
+        ) if cfg.get("active", True) else None
     ),
     "experience": lambda doc, data, cfg, is_1page: _build_experience_section(doc, data, cfg, is_1page),
     "projects": lambda doc, data, cfg, is_1page: _build_projects_section(doc, data, cfg, is_1page),
@@ -515,9 +562,12 @@ def _build_extra_section(doc, data, cfg, is_1page):
     if not extra:
         return
     heading_el(doc, "EXTRACURRICULAR", cfg, before=5, after=2)
-    for e in extra:
+    for i, e in enumerate(extra):
         text = e if isinstance(e, str) else e.get("text", "")
-        bul(doc, text, cfg)
+        p = bul(doc, text, cfg)
+        # Keep first bullet with heading
+        if i < 1 and len(extra) > 1:
+            keep_with_next(p)
 
 
 # ─────────────────────────────────────────────

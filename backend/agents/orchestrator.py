@@ -49,7 +49,9 @@ def classify_intent(message: str, has_file: bool = False, file_type: str = "") -
         return "FORMAT_CHANGE"
     if any(k in msg_lower for k in ["add project", "add experience", "add cert", "remove project",
                                       "edit my", "update my", "change my", "add skill",
-                                      "linkedin", "github url", "add link"]):
+                                      "linkedin", "github url", "add link",
+                                      "summary", "add point", "add bullet",
+                                      "extracurricular", "title", "headline"]):
         return "EDIT_KNOWLEDGE_BASE"
     if any(k in msg_lower for k in ["show my", "view my", "what do i have", "my profile", "my data"]):
         return "VIEW_DATA"
@@ -122,23 +124,78 @@ def handle_edit_request(message: str, master_profile: dict, chat_history: list[d
     Handle knowledge base edit requests via chat.
     Returns the updated profile + a response message.
     """
-    system = """You are a CV data editor. The user wants to modify their knowledge base profile.
-Given their request and current profile, return a JSON object with:
+    system = """You are a **senior CV copywriter and ATS optimization expert**. The user wants to modify their knowledge base profile.
+Your edits must be polished, professional, and ATS-friendly.
+
+## ⚠️ GOLDEN RULE — USER INSTRUCTION ALWAYS WINS:
+The writing quality rules below are DEFAULTS. If the user explicitly asks for a different length, tone, or style
+(e.g. "make it shorter", "one liner", "make it longer", "expand it", "keep it brief"),
+OBEY THE USER'S REQUEST and override the defaults. The user's instruction is the highest priority.
+
+## WRITING QUALITY RULES (defaults — override if user says otherwise):
+
+### Professional Summary ("edit_summary"):
+- DEFAULT: Write 2-3 sentences (40-60 words).
+- Open with role identity + years/level: e.g. "Generative AI Engineer with hands-on experience in…"
+- Include 3-5 hard skills / technologies mentioned in the existing profile.
+- End with an impact phrase: "…delivering scalable, production-ready solutions" / "…driving data-driven decision-making."
+- Match the tone and depth of the existing summary — if it's detailed, keep it detailed.
+- When user says "just add X" to the summary, integrate X naturally into the EXISTING summary text. Do NOT rewrite or shorten it.
+- If user explicitly asks for shorter/longer, adjust length accordingly while keeping it professional.
+
+### Title / Headline ("edit_title"):
+- Format: "Primary Role | Secondary Strength | Key Tech/Domain"
+- Example: "Generative AI Engineer | AI-Powered Backend Specialist"
+
+### Experience Bullets:
+- Start with a strong action verb (Designed, Built, Optimized, Deployed, Automated…).
+- Follow XYZ formula: "Accomplished [X] by doing [Y], resulting in [Z]."
+- Include specific technologies, tools, and quantified impact where possible.
+- Professional, concise, 1-2 lines each.
+
+### Project Bullets:
+- Lead with what was built and the tech stack used.
+- Highlight the outcome or capability delivered.
+
+### Extracurricular:
+- DEFAULT: Write clear, descriptive entries: e.g. "Volunteered in community gardening and plantation drives with Simon Community"
+- NOT just a single word like "Gardening" — provide some context.
+- BUT if the user says "one liner", "short", or "brief", write a concise single line (8-15 words max).
+- If the user says "longer" or "expand", write 2-3 detailed sentences.
+
+### Skills:
+- Group by category. Use industry-standard names (e.g., "LangChain" not "langchain").
+
+## MINIMAL EDIT PRINCIPLE:
+- When the user says "just add X" or "add one word of X", make the SMALLEST edit needed — integrate the word/phrase into the existing text. Do NOT rewrite the entire section.
+- Preserve the existing content, length, and structure. Only modify what the user explicitly asked for.
+
+## OUTPUT FORMAT:
+Return a JSON object with:
 1. "action": one of "add_experience", "edit_experience", "remove_experience",
    "add_project", "edit_project", "remove_project",
    "add_certification", "edit_certification", "remove_certification",
    "add_skill", "remove_skill", "edit_personal", "edit_links",
    "add_extracurricular", "edit_extracurricular", "remove_extracurricular",
-   "add_education", "edit_education", "remove_education"
-2. "target_id": the ID of the item to edit/remove (null for add/personal)
-3. "updates": the data to add or the fields to update. For extracurricular, use {"text": "the activity description"}
+   "add_education", "edit_education", "remove_education",
+   "edit_summary", "edit_title"
+2. "target_id": the ID of the item to edit/remove (null for add/personal/summary/title)
+3. "updates": the data to add or the fields to update.
+   - For summary edits: {"summary": "the full updated summary text"}
+   - For title edits: {"title": "the new title"}
+   - For extracurricular: {"text": "the activity description"}
 4. "needs_more_info": boolean — true if you need to ask the user for more details
 5. "question": if needs_more_info is true, what to ask
-6. "response_message": friendly message to show the user
+6. "response_message": friendly confirmation message showing what changed
 
-IMPORTANT: Never fabricate data. If the user hasn't provided enough detail, set needs_more_info=true."""
+IMPORTANT: Never fabricate data the user hasn't mentioned. If insufficient detail, set needs_more_info=true.
+When user asks to edit/update summary or professional summary, use action="edit_summary".
+When user asks to edit/update title or headline, use action="edit_title"."""
 
     messages = [{"role": "system", "content": system}]
+    # Include recent chat history for context (user may refer to previous edits)
+    for msg in chat_history[-6:]:
+        messages.append({"role": msg.get("role", "user"), "content": msg.get("content", "")})
     messages.append({"role": "user", "content": f"Current profile:\n{json.dumps(master_profile, indent=2)}\n\nUser request: {message}"})
 
     response = client.chat.completions.create(

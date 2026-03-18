@@ -11,6 +11,7 @@ import json
 from backend.auth.models import User, get_db, init_db
 from backend.auth.utils import hash_password, verify_password, create_access_token, decode_access_token
 from backend.config import STORAGE_DIR
+from backend.utils import r2_write_json, r2_exists
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -86,9 +87,8 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    # Create default render config
-    cfg_path = user.render_config_path()
-    cfg_path.write_text(json.dumps(DEFAULT_RENDER_CONFIG, indent=2), encoding="utf-8")
+    # Create default render config in R2
+    r2_write_json(f"users/{user.username}/render_config.json", DEFAULT_RENDER_CONFIG)
 
     token = create_access_token({"sub": user.id})
     return TokenResponse(access_token=token, user_id=user.id, username=user.username)
@@ -116,5 +116,5 @@ def me(user: User = Depends(get_current_user)):
         username=user.username,
         email=user.email,
         full_name=user.full_name,
-        has_master_profile=user.master_path().exists(),
+        has_master_profile=r2_exists(f"users/{user.username}/master_profile.json"),
     )

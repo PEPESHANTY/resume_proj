@@ -72,3 +72,10 @@ def get_model_name():
     if USE_AZURE:
         return AZURE_OPENAI_DEPLOYMENT
     return OPENAI_MODEL
+
+# ── Cloudflare R2 (S3-compatible storage) ─────────────────────────
+R2_ENDPOINT_URL = os.getenv("R2_ENDPOINT_URL", "")
+R2_BUCKET_NAME = os.getenv("R2_BUCKET_NAME", "")
+R2_ACCESS_KEY_ID = os.getenv("R2_ACCESS_KEY_ID", "")
+R2_SECRET_ACCESS_KEY = os.getenv("R2_SECRET_ACCESS_KEY", "")
+R2_REGION = os.getenv("R2_REGION", "")

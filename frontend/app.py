@@ -68,6 +68,14 @@ st.markdown("""
     /* Status badges */
     .badge-pass { background: #4caf50; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
     .badge-fail { background: #f44336; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
+
+    /* PDF preview iframe — full width in right panel */
+    .pdf-preview-frame {
+        width: 100%;
+        height: 600px;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -90,6 +98,10 @@ def init_state():
         "active_tab": "Knowledge Base",
         "last_docx_path": None,
         "last_pdf_path": None,
+        "last_docx_filename": None,
+        "last_pdf_filename": None,
+        "render_success": False,
+        "preview_needs_refresh": False,
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -668,7 +680,7 @@ def render_tailor_tab(profile):
         # ── Render button ──
         st.divider()
         if st.button("📄 Render & Preview", use_container_width=True, type="primary"):
-            with st.spinner("Rendering..."):
+            with st.spinner("Rendering CV..."):
                 render_resp = api_post("/render", {
                     "mode": st.session_state.get("saved_mode", "2page"),
                     "company": st.session_state.get("saved_company", "GENERIC"),
@@ -678,7 +690,18 @@ def render_tailor_tab(profile):
                 render_body = render_resp.json()
                 st.session_state.last_docx_path = render_body.get("docx_path")
                 st.session_state.last_pdf_path = render_body.get("pdf_path")
-                st.success("CV rendered! Go to the Preview tab.")
+                st.session_state.last_docx_filename = render_body.get("docx_filename")
+                st.session_state.last_pdf_filename = render_body.get("pdf_filename")
+                st.session_state.render_success = True
+                st.session_state.preview_needs_refresh = False
+                st.success("CV rendered! Check the Preview panel on the right. →")
+                st.rerun()
+            else:
+                try:
+                    detail = render_resp.json().get("detail", "Unknown error")
+                except Exception:
+                    detail = f"HTTP {render_resp.status_code}"
+                st.error(f"Render failed: {detail}")
 
 
 def _render_eval_details(body):
@@ -687,102 +710,121 @@ def _render_eval_details(body):
 
 
 # ─────────────────────────────────────────────
-# PREVIEW TAB
+# SHARED DOWNLOAD + PREVIEW HELPER
 # ─────────────────────────────────────────────
 
-def render_preview_tab(profile):
-    st.subheader("👁️ Preview & Download")
-
-    if not profile:
-        st.info("No profile loaded.")
-        return
-
-    # Quick render from master (no tailoring)
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        mode = st.selectbox("Mode", ["2page", "1page"], key="preview_mode")
-    with col2:
-        company = st.text_input("Company", value="GENERIC", key="preview_company")
-    with col3:
-        st.write("")
-        st.write("")
-        if st.button("Render Now", use_container_width=True):
-            with st.spinner("Rendering..."):
-                resp = api_post("/render", {
-                    "mode": mode,
-                    "company": company,
-                    "export_pdf": True
-                })
-            if resp.status_code == 200:
-                body = resp.json()
-                st.session_state.last_docx_path = body.get("docx_path")
-                st.session_state.last_pdf_path = body.get("pdf_path")
-                st.success("Rendered!")
-
-    st.divider()
-
-    # Download buttons
+def _show_download_and_preview(context="main"):
+    """Show download buttons and PDF preview using /download/ API endpoint.
+    
+    Args:
+        context: unique string to differentiate widget keys when called from multiple places.
+    """
+    docx_filename = st.session_state.get("last_docx_filename")
+    pdf_filename = st.session_state.get("last_pdf_filename")
     docx_path = st.session_state.get("last_docx_path")
     pdf_path = st.session_state.get("last_pdf_path")
 
-    if docx_path or pdf_path:
-        st.write("**Generated files:**")
-        col_d1, col_d2 = st.columns(2)
-
+    if not docx_filename and not pdf_filename:
+        import os
         if docx_path:
-            import os
-            fname = os.path.basename(docx_path)
-            with col_d1:
-                try:
-                    with open(docx_path, "rb") as f:
-                        st.download_button(
-                            "⬇️ Download DOCX",
-                            data=f.read(),
-                            file_name=fname,
-                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                            use_container_width=True,
-                        )
-                except FileNotFoundError:
-                    st.warning("DOCX file not found. Try rendering again.")
-
+            docx_filename = os.path.basename(docx_path)
         if pdf_path:
-            import os
-            fname = os.path.basename(pdf_path)
-            with col_d2:
-                try:
-                    with open(pdf_path, "rb") as f:
-                        pdf_bytes = f.read()
-                        st.download_button(
-                            "⬇️ Download PDF",
-                            data=pdf_bytes,
-                            file_name=fname,
-                            mime="application/pdf",
-                            use_container_width=True,
-                        )
-                    # PDF preview
-                    import base64
-                    b64 = base64.b64encode(pdf_bytes).decode("utf-8")
-                    st.markdown(
-                        f'<iframe src="data:application/pdf;base64,{b64}" '
-                        f'width="100%" height="600" type="application/pdf"></iframe>',
-                        unsafe_allow_html=True
+            pdf_filename = os.path.basename(pdf_path)
+
+    if not docx_filename and not pdf_filename:
+        st.caption("No rendered CV yet. Render from the Tailor tab or click 🔄 Refresh Preview.")
+        return
+
+    # Download buttons in 2 columns
+    col_d1, col_d2 = st.columns(2)
+    pdf_bytes = None
+
+    if docx_filename:
+        with col_d1:
+            try:
+                resp = requests.get(
+                    f"{API_URL}/download/{docx_filename}",
+                    headers=api_headers(),
+                    timeout=30,
+                )
+                if resp.status_code == 200:
+                    st.download_button(
+                        "⬇️ DOCX",
+                        data=resp.content,
+                        file_name=docx_filename,
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        use_container_width=True,
+                        key=f"dl_docx_{context}",
                     )
-                except FileNotFoundError:
-                    st.warning("PDF file not found.")
-    else:
-        st.info("No rendered CV yet. Use 'Render Now' above or tailor a CV first.")
+                else:
+                    st.warning("DOCX not ready.")
+            except Exception as e:
+                st.warning(f"DOCX error: {e}")
+
+    if pdf_filename:
+        with col_d2:
+            try:
+                resp = requests.get(
+                    f"{API_URL}/download/{pdf_filename}",
+                    headers=api_headers(),
+                    timeout=30,
+                )
+                if resp.status_code == 200:
+                    pdf_bytes = resp.content
+                    st.download_button(
+                        "⬇️ PDF",
+                        data=pdf_bytes,
+                        file_name=pdf_filename,
+                        mime="application/pdf",
+                        use_container_width=True,
+                        key=f"dl_pdf_{context}",
+                    )
+                else:
+                    st.warning("PDF not ready.")
+            except Exception as e:
+                st.warning(f"PDF error: {e}")
+
+    # PDF preview — FULL WIDTH (outside columns)
+    if pdf_bytes:
+        import base64
+        b64 = base64.b64encode(pdf_bytes).decode("utf-8")
+        st.markdown(
+            f'<iframe src="data:application/pdf;base64,{b64}" '
+            f'class="pdf-preview-frame"></iframe>',
+            unsafe_allow_html=True,
+        )
 
 
 # ─────────────────────────────────────────────
 # CHATBOT PANEL (right 30%)
 # ─────────────────────────────────────────────
 
+def _do_render_preview():
+    """Trigger a render and store file info in session state."""
+    mode = st.session_state.get("saved_mode", "2page")
+    company = st.session_state.get("saved_company", "GENERIC")
+    resp = api_post("/render", {
+        "mode": mode,
+        "company": company,
+        "export_pdf": True,
+    })
+    if resp.status_code == 200:
+        body = resp.json()
+        st.session_state.last_docx_path = body.get("docx_path")
+        st.session_state.last_pdf_path = body.get("pdf_path")
+        st.session_state.last_docx_filename = body.get("docx_filename")
+        st.session_state.last_pdf_filename = body.get("pdf_filename")
+        st.session_state.render_success = True
+        return True
+    return False
+
+
 def render_chatbot():
     st.markdown("### 💬 Assistant")
     st.caption("Ask me to edit your profile, change formatting, or anything else.")
 
     # Chat history display
-    chat_container = st.container(height=450)
+    chat_container = st.container(height=350)
     with chat_container:
         for msg in st.session_state.chat_history:
             if msg["role"] == "user":
@@ -800,16 +842,16 @@ def render_chatbot():
             resp = api_post("/chat", {
                 "message": user_input,
                 "chat_history": st.session_state.chat_history[-10:],
+                "company": st.session_state.get("saved_company", "GENERIC"),
             })
             if resp.status_code == 200:
                 body = resp.json()
                 reply = body.get("reply", "Sorry, something went wrong.")
                 st.session_state.chat_history.append({"role": "assistant", "content": reply})
 
-                if body.get("data_updated"):
+                if body.get("data_updated") or body.get("needs_re_render"):
                     load_profile()
-                if body.get("needs_re_render"):
-                    load_profile()
+                    st.session_state.preview_needs_refresh = True
             else:
                 st.session_state.chat_history.append({
                     "role": "assistant",
@@ -830,7 +872,6 @@ def render_chatbot():
         if chat_file:
             fname = chat_file.name.lower()
             if fname.endswith((".pdf", ".docx", ".doc")):
-                # Upload as CV — extract and merge into profile
                 with st.spinner("Extracting CV data..."):
                     files = {"file": (chat_file.name, chat_file.getvalue(), chat_file.type)}
                     resp = requests.post(f"{API_URL}/upload-cv", files=files, headers=api_headers())
@@ -838,13 +879,13 @@ def render_chatbot():
                     load_profile()
                     st.session_state.chat_history.append({
                         "role": "assistant",
-                        "content": f"✅ Extracted data from **{chat_file.name}** and updated your knowledge base. Check the Knowledge Base tab."
+                        "content": f"✅ Extracted data from **{chat_file.name}** and updated your knowledge base."
                     })
+                    st.session_state.preview_needs_refresh = True
                     st.rerun()
                 else:
                     st.error("Failed to extract CV data.")
             else:
-                # Image — OCR extract
                 with st.spinner("Reading image..."):
                     files = {"file": (chat_file.name, chat_file.getvalue(), chat_file.type)}
                     resp = requests.post(f"{API_URL}/read-image", files=files,
@@ -856,6 +897,32 @@ def render_chatbot():
                         "content": f"📷 Extracted from image:\n\n{text[:500]}..."
                     })
                     st.rerun()
+
+
+def render_preview_panel():
+    """Preview panel shown below the chatbot on the right side."""
+    st.divider()
+    st.markdown("##### 👁️ Preview")
+
+    # Refresh preview button — prominent when data changed
+    if st.session_state.get("preview_needs_refresh"):
+        if st.button("🔄 Refresh Preview", use_container_width=True, type="primary",
+                     key="refresh_preview_btn"):
+            with st.spinner("Re-rendering..."):
+                if _do_render_preview():
+                    st.session_state.preview_needs_refresh = False
+                    st.rerun()
+                else:
+                    st.error("Render failed.")
+    else:
+        if st.button("🔄 Refresh Preview", use_container_width=True, key="refresh_preview_btn_normal"):
+            with st.spinner("Rendering..."):
+                if _do_render_preview():
+                    st.rerun()
+                else:
+                    st.error("Render failed.")
+
+    _show_download_and_preview(context="sidebar")
 
 
 # ─────────────────────────────────────────────
@@ -881,14 +948,13 @@ def main():
     st.divider()
 
     # ── 70/30 LAYOUT ──
-    main_col, chat_col = st.columns([7, 3])
+    main_col, chat_col = st.columns([55, 45])
 
     # LEFT 70% — Main workspace
     with main_col:
-        tab_kb, tab_tailor, tab_preview, tab_settings = st.tabs([
+        tab_kb, tab_tailor, tab_settings = st.tabs([
             "📋 Knowledge Base",
             "🎯 Tailor CV",
-            "👁️ Preview & Download",
             "⚙️ Settings",
         ])
 
@@ -897,9 +963,6 @@ def main():
 
         with tab_tailor:
             render_tailor_tab(st.session_state.profile)
-
-        with tab_preview:
-            render_preview_tab(st.session_state.profile)
 
         with tab_settings:
             st.subheader("⚙️ Render Configuration")
@@ -942,9 +1005,10 @@ def main():
                         st.session_state.render_config = resp.json().get("config", new_config)
                         st.success("Settings saved!")
 
-    # RIGHT 30% — Chatbot
+    # RIGHT 30% — Chatbot + Preview
     with chat_col:
         render_chatbot()
+        render_preview_panel()
 
 
 if __name__ == "__main__":
