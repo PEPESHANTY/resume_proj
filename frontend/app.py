@@ -3,6 +3,7 @@ Streamlit CV Builder — 70/30 layout.
 Left (70%): Main workspace with tabs for Knowledge Base, Tailor, Preview.
 Right (30%): Chatbot assistant panel.
 """
+import os
 import streamlit as st
 import requests
 import json
@@ -12,7 +13,7 @@ import time
 # CONFIG
 # ─────────────────────────────────────────────
 
-API_URL = "http://localhost:8000"
+API_URL = os.environ.get("API_URL", "http://localhost:8000")
 
 st.set_page_config(
     page_title="CV Builder",
