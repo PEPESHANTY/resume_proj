@@ -36,4 +36,4 @@ boto3>=1.34.0
 # ─────────────────────────────────────────
 # PDF export (Windows — Word COM automation)
 # ─────────────────────────────────────────
-pywin32>=306
+pywin32>=306; sys_platform == "win32"
