@@ -654,7 +654,6 @@ def render_tailor_tab(profile):
                 st.write("")
                 if st.button("🔍 Re-evaluate Only", use_container_width=True,
                              help="Re-run evaluation on current CV without re-tailoring"):
-                    from backend.agents import evaluator as eval_agent
                     with st.spinner("Evaluating..."):
                         profile_data = st.session_state.profile
                         resp_profile = api_get("/profile")
