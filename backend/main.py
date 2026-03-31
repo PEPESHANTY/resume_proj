@@ -693,6 +693,39 @@ async def download_file(
     )
 
 
+@app.get("/preview/{filename}")
+async def preview_file(
+    filename: str,
+    user: User = Depends(get_current_user),
+):
+    """Return an HTML preview of a .docx file using mammoth."""
+    if not filename.endswith(".docx"):
+        raise HTTPException(status_code=400, detail="Preview only supported for .docx files")
+
+    r2_key = _r2_key(user, f"output/{filename}")
+    file_bytes = r2_read_bytes(r2_key)
+    if file_bytes is None:
+        raise HTTPException(status_code=404, detail="File not found in R2")
+
+    try:
+        import mammoth
+        import io
+        result = mammoth.convert_to_html(io.BytesIO(file_bytes))
+        html = f"""<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>
+  body {{ font-family: Calibri, Arial, sans-serif; font-size: 10pt;
+          margin: 0.5in 0.4in; line-height: 1.3; }}
+  p {{ margin: 2px 0; }}
+  ul {{ margin: 2px 0; padding-left: 1.2em; }}
+  li {{ margin: 1px 0; }}
+  strong {{ font-weight: bold; }}
+</style></head><body>{result.value}</body></html>"""
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Preview generation failed: {e}")
+
+    return Response(content=html, media_type="text/html")
+
+
 # ─────────────────────────────────────────────
 # Profile CRUD endpoints (for the main UI panel)
 # ─────────────────────────────────────────────

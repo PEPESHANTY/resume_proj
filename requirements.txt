@@ -34,6 +34,6 @@ requests>=2.31.0
 boto3>=1.34.0
 
 # ─────────────────────────────────────────
-# PDF export (Windows — Word COM automation)
+# DOCX → HTML preview + PDF via LibreOffice
 # ─────────────────────────────────────────
-pywin32>=306; sys_platform == "win32"
+mammoth>=1.6.0

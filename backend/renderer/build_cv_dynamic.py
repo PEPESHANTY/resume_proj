@@ -614,57 +614,53 @@ def build_cv(data: dict, output_path: str, mode: str = "2page", config: dict | N
 # ─────────────────────────────────────────────
 
 def export_pdfs(docx_paths):
-    """Export .docx files to .pdf using MS Word COM (Windows only)."""
-    try:
-        import win32com.client
-        import shutil
-        import tempfile
-        import subprocess
-        subprocess.run(["taskkill", "/F", "/IM", "WINWORD.EXE"], capture_output=True)
-        word = win32com.client.Dispatch('Word.Application')
-        word.Visible = False
-        pdf_paths = []
-        for docx_path in docx_paths:
-            docx_path = os.path.abspath(docx_path)
-            pdf_name  = os.path.splitext(os.path.basename(docx_path))[0] + ".pdf"
-            tmp_pdf   = os.path.join(tempfile.gettempdir(), pdf_name)
-            final_pdf = os.path.join(os.path.dirname(docx_path), pdf_name)
-            doc = word.Documents.Open(FileName=docx_path)
-            doc.ExportAsFixedFormat(tmp_pdf, ExportFormat=17)
-            doc.Close(False)
-            if os.path.exists(final_pdf):
-                os.remove(final_pdf)
-            shutil.copy2(tmp_pdf, final_pdf)
-            os.remove(tmp_pdf)
-            pdf_paths.append(final_pdf)
-            print(f"PDF: {final_pdf}")
-        word.Quit()
-        return pdf_paths
-    except ImportError:
-        print("WARNING: win32com not available. PDF export requires Windows + MS Word.")
-        print("Falling back to libreoffice if available...")
-        return _export_pdfs_libreoffice(docx_paths)
-
-
-def _export_pdfs_libreoffice(docx_paths):
-    """Fallback PDF export using LibreOffice (cross-platform)."""
+    """Export .docx to .pdf — tries LibreOffice first (cross-platform), falls back to MS Word COM on Windows."""
     import subprocess
     pdf_paths = []
     for docx_path in docx_paths:
         docx_path = os.path.abspath(docx_path)
-        out_dir = os.path.dirname(docx_path)
+        out_dir   = os.path.dirname(docx_path)
+        pdf_name  = os.path.splitext(os.path.basename(docx_path))[0] + ".pdf"
+        pdf_path  = os.path.join(out_dir, pdf_name)
+
+        # Try LibreOffice (works on Linux/Mac/Windows if installed)
+        converted = False
+        for soffice_cmd in ("soffice", "libreoffice"):
+            try:
+                subprocess.run(
+                    [soffice_cmd, "--headless", "--convert-to", "pdf",
+                     "--outdir", out_dir, docx_path],
+                    capture_output=True, check=True, timeout=60,
+                )
+                if os.path.exists(pdf_path):
+                    pdf_paths.append(pdf_path)
+                    print(f"PDF (LibreOffice): {pdf_path}")
+                    converted = True
+                    break
+            except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+                continue
+
+        if converted:
+            continue
+
+        # Fallback: MS Word COM (Windows only)
         try:
-            subprocess.run([
-                "soffice", "--headless", "--convert-to", "pdf",
-                "--outdir", out_dir, docx_path
-            ], capture_output=True, check=True)
-            pdf_name = os.path.splitext(os.path.basename(docx_path))[0] + ".pdf"
-            pdf_path = os.path.join(out_dir, pdf_name)
-            if os.path.exists(pdf_path):
-                pdf_paths.append(pdf_path)
-                print(f"PDF: {pdf_path}")
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            print(f"WARNING: Could not convert {docx_path} to PDF. Install LibreOffice or use Windows with MS Word.")
+            import win32com.client, shutil, tempfile
+            subprocess.run(["taskkill", "/F", "/IM", "WINWORD.EXE"], capture_output=True)
+            word    = win32com.client.Dispatch('Word.Application')
+            word.Visible = False
+            tmp_pdf = os.path.join(tempfile.gettempdir(), pdf_name)
+            doc     = word.Documents.Open(FileName=docx_path)
+            doc.ExportAsFixedFormat(tmp_pdf, ExportFormat=17)
+            doc.Close(False)
+            word.Quit()
+            shutil.copy2(tmp_pdf, pdf_path)
+            os.remove(tmp_pdf)
+            pdf_paths.append(pdf_path)
+            print(f"PDF (Word COM): {pdf_path}")
+        except Exception as e:
+            print(f"WARNING: PDF conversion failed for {docx_path}: {e}")
+
     return pdf_paths
 
 

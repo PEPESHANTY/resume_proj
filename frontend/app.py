@@ -714,11 +714,7 @@ def _render_eval_details(body):
 # ─────────────────────────────────────────────
 
 def _show_download_and_preview(context="main"):
-    """Show download buttons and PDF preview using /download/ API endpoint.
-    
-    Args:
-        context: unique string to differentiate widget keys when called from multiple places.
-    """
+    """Show download buttons and HTML preview of the rendered CV."""
     docx_filename = st.session_state.get("last_docx_filename")
     pdf_filename = st.session_state.get("last_pdf_filename")
     docx_path = st.session_state.get("last_docx_path")
@@ -735,9 +731,8 @@ def _show_download_and_preview(context="main"):
         st.caption("No rendered CV yet. Render from the Tailor tab or click 🔄 Refresh Preview.")
         return
 
-    # Download buttons in 2 columns
+    # Download buttons
     col_d1, col_d2 = st.columns(2)
-    pdf_bytes = None
 
     if docx_filename:
         with col_d1:
@@ -770,10 +765,9 @@ def _show_download_and_preview(context="main"):
                     timeout=30,
                 )
                 if resp.status_code == 200:
-                    pdf_bytes = resp.content
                     st.download_button(
                         "⬇️ PDF",
-                        data=pdf_bytes,
+                        data=resp.content,
                         file_name=pdf_filename,
                         mime="application/pdf",
                         use_container_width=True,
@@ -784,15 +778,24 @@ def _show_download_and_preview(context="main"):
             except Exception as e:
                 st.warning(f"PDF error: {e}")
 
-    # PDF preview — FULL WIDTH (outside columns)
-    if pdf_bytes:
-        import base64
-        b64 = base64.b64encode(pdf_bytes).decode("utf-8")
-        st.markdown(
-            f'<iframe src="data:application/pdf;base64,{b64}" '
-            f'class="pdf-preview-frame"></iframe>',
-            unsafe_allow_html=True,
-        )
+    # HTML preview — FULL WIDTH (mammoth converts docx → HTML server-side)
+    if docx_filename:
+        try:
+            prev_resp = requests.get(
+                f"{API_URL}/preview/{docx_filename}",
+                headers=api_headers(),
+                timeout=30,
+            )
+            if prev_resp.status_code == 200:
+                import base64
+                b64 = base64.b64encode(prev_resp.content).decode("utf-8")
+                st.markdown(
+                    f'<iframe src="data:text/html;base64,{b64}" '
+                    f'class="pdf-preview-frame"></iframe>',
+                    unsafe_allow_html=True,
+                )
+        except Exception:
+            pass  # Preview is best-effort; download buttons are the primary action
 
 
 # ─────────────────────────────────────────────
