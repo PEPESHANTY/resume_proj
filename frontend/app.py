@@ -158,8 +158,9 @@ def render_login():
 
                 if submit and username and password:
                     try:
-                        resp = requests.post(f"{API_URL}/auth/login",
-                                             data={"username": username, "password": password}, timeout=10)
+                        with st.spinner("Connecting to server (may take up to 60s on first load)..."):
+                            resp = requests.post(f"{API_URL}/auth/login",
+                                                 data={"username": username, "password": password}, timeout=60)
                         if resp.status_code == 200:
                             body = resp.json()
                             st.session_state.authenticated = True
@@ -174,7 +175,9 @@ def render_login():
                             except Exception:
                                 st.error(f"Login failed (HTTP {resp.status_code})")
                     except requests.exceptions.ConnectionError:
-                        st.error("Cannot reach the backend. Make sure the API server is running on port 8000.")
+                        st.error("Cannot reach the backend. Make sure the API server is running.")
+                    except requests.exceptions.Timeout:
+                        st.error("Server is taking too long to respond. Please try again — it may be waking up.")
                     except Exception as e:
                         st.error(f"Login error: {e}")
 
@@ -188,12 +191,13 @@ def render_login():
 
                 if reg_submit and new_user and new_email and new_pass:
                     try:
-                        resp = requests.post(f"{API_URL}/auth/register", json={
-                            "username": new_user,
-                            "email": new_email,
-                            "password": new_pass,
-                            "full_name": new_name,
-                        }, timeout=10)
+                        with st.spinner("Connecting to server (may take up to 60s on first load)..."):
+                            resp = requests.post(f"{API_URL}/auth/register", json={
+                                "username": new_user,
+                                "email": new_email,
+                                "password": new_pass,
+                                "full_name": new_name,
+                            }, timeout=60)
                         if resp.status_code == 200:
                             body = resp.json()
                             st.session_state.authenticated = True
