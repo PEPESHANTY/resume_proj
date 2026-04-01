@@ -10,7 +10,6 @@ import json
 
 from backend.auth.models import User, get_db, init_db
 from backend.auth.utils import hash_password, verify_password, create_access_token, decode_access_token
-from backend.config import STORAGE_DIR
 from backend.utils import r2_write_json, r2_exists
 
 router = APIRouter(prefix="/auth", tags=["auth"])

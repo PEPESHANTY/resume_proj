@@ -17,7 +17,7 @@ from backend.agents import orchestrator, extractor, formatter
 from backend.renderer.build_cv_dynamic import render_cv
 from backend.utils import (
     r2_enabled, r2_read_json, r2_write_json,
-    r2_read_bytes, r2_write_bytes, r2_exists, upload_to_r2,
+    r2_read_bytes, r2_write_bytes, r2_exists, r2_list_keys, upload_to_r2,
 )
 
 app = FastAPI(title="CV Builder API", version="1.0.0")
@@ -114,6 +114,83 @@ def _save_tailored(user: User, company: str, data: dict):
         raise HTTPException(status_code=500, detail="Failed to save tailored data to R2")
 
 
+_MONTH_ORDER = {
+    "january": 1, "february": 2, "march": 3, "april": 4,
+    "may": 5, "june": 6, "july": 7, "august": 8,
+    "september": 9, "october": 10, "november": 11, "december": 12,
+    "jan": 1, "feb": 2, "mar": 3, "apr": 4,
+    "jun": 6, "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+}
+
+def _parse_start_date(date_range: str | None) -> tuple[int, int]:
+    """Parse 'Month YYYY – …' or 'Month YYYY – Present' into (year, month) for sorting."""
+    if not date_range:
+        return (0, 0)
+    # Take the first part before the dash/em-dash
+    import re
+    part = re.split(r'[-\u2013\u2014]', str(date_range))[0].strip()
+    tokens = part.split()
+    year, month = 0, 0
+    for tok in tokens:
+        if tok.isdigit() and len(tok) == 4:
+            year = int(tok)
+        else:
+            month = _MONTH_ORDER.get(tok.lower(), 0)
+    return (year, month)
+
+
+def _sort_experience(items: list) -> list:
+    """Return experience list sorted newest-first by start date."""
+    return sorted(items, key=lambda e: _parse_start_date(e.get("date_range")), reverse=True)
+
+
+def _list_tailored_companies(user: User) -> list[str]:
+    """Return list of company codes that have tailored JSON files in R2."""
+    prefix = f"users/{user.username}/tailored_"
+    keys = r2_list_keys(prefix)
+    companies = []
+    for key in keys:
+        filename = key.split("/")[-1]  # e.g. "tailored_AA.json"
+        if filename.startswith("tailored_") and filename.endswith(".json"):
+            company = filename[len("tailored_"):-len(".json")]
+            companies.append(company)
+    return companies
+
+
+def _propagate_to_all_tailored(user: User, profile: dict, action: str, updates: dict):
+    """Propagate a profile edit to ALL existing tailored JSONs for the user."""
+    companies = _list_tailored_companies(user)
+    print(f"[PROPAGATE] action={action}, updating {len(companies)} tailored file(s): {companies}")
+    for company in companies:
+        tailored = _load_tailored(user, company)
+        if not tailored:
+            continue
+        if action == "edit_summary" and updates.get("summary"):
+            tailored["summary"] = updates["summary"]
+        elif action == "edit_title" and updates.get("title"):
+            tp = tailored.get("personal", {})
+            tp["title"] = updates["title"]
+            tailored["personal"] = tp
+        elif action in ("edit_personal", "edit_links"):
+            tp = tailored.get("personal", {})
+            tp.update(updates)
+            tailored["personal"] = tp
+        elif action in ("add_experience", "edit_experience", "remove_experience", "update_experience", "reorder_experience"):
+            tailored["experience"] = profile.get("experience", [])
+        elif action in ("add_project", "edit_project", "remove_project", "reorder_projects"):
+            tailored["projects"] = profile.get("projects", [])
+        elif action in ("add_extracurricular", "edit_extracurricular", "remove_extracurricular"):
+            tailored["extracurricular"] = profile.get("extracurricular", [])
+        elif action in ("add_education", "edit_education", "remove_education", "update_course_module"):
+            tailored["education"] = profile.get("education", [])
+        elif action in ("add_certification", "edit_certification", "remove_certification"):
+            tailored["certifications"] = profile.get("certifications", [])
+        elif action in ("add_skill", "remove_skill", "update_skill"):
+            tailored["skills_pool"] = profile.get("skills_pool", [])
+        r2_write_json(_r2_key(user, f"tailored_{company}.json"), tailored)
+        print(f"[PROPAGATE] Updated tailored_{company}.json")
+
+
 # ─────────────────────────────────────────────
 # Upload endpoint (CV extraction)
 # ─────────────────────────────────────────────
@@ -157,6 +234,20 @@ async def chat(
     profile = _load_profile(user)
     config = _load_config(user)
 
+    # If the last bot message was a clarifying question about an edit,
+    # treat this reply as a continuation of EDIT_KNOWLEDGE_BASE regardless of classification.
+    if intent == "GENERAL_CHAT" and req.chat_history:
+        last_bot_msgs = [m for m in req.chat_history if m.get("role") == "assistant"]
+        if last_bot_msgs:
+            last_bot_text = last_bot_msgs[-1].get("content", "")
+            edit_question_hints = [
+                "location", "date", "company", "role", "title", "description",
+                "tell me more", "could you provide", "can you share", "what is the",
+                "which", "when did", "please provide", "could you clarify",
+            ]
+            if "?" in last_bot_text and any(h in last_bot_text.lower() for h in edit_question_hints):
+                intent = "EDIT_KNOWLEDGE_BASE"
+
     reply = ""
     action_taken = None
     data_updated = False
@@ -184,18 +275,33 @@ async def chat(
                 # Determine which section to modify
                 section_map = {
                     "add_experience": "experience", "edit_experience": "experience", "remove_experience": "experience",
+                    "reorder_experience": "experience",
                     "add_project": "projects", "edit_project": "projects", "remove_project": "projects",
+                    "reorder_projects": "projects",
                     "add_certification": "certifications", "edit_certification": "certifications", "remove_certification": "certifications",
                     "add_extracurricular": "extracurricular", "edit_extracurricular": "extracurricular", "remove_extracurricular": "extracurricular",
                     "add_education": "education", "edit_education": "education", "remove_education": "education",
-                    "add_skill": "skills_pool", "remove_skill": "skills_pool",
+                    "add_skill": "skills_pool", "remove_skill": "skills_pool", "update_skill": "skills_pool",
                     "edit_personal": "personal", "edit_links": "personal",
                 }
                 section = section_map.get(action, "")
 
                 print(f"[EDIT] action={action}, section={section}, target_id={target_id}, updates={json.dumps(updates, default=str)[:500]}")
 
-                if action.startswith("add_") and section and section != "personal":
+                if action in ("reorder_experience", "reorder_projects") and section:
+                    desired_order = updates.get("order", [])
+                    if desired_order:
+                        items = profile.get(section, [])
+                        id_to_item = {it.get("id"): it for it in items}
+                        reordered = [id_to_item[eid] for eid in desired_order if eid in id_to_item]
+                        remaining = [it for it in items if it.get("id") not in set(desired_order)]
+                        profile[section] = reordered + remaining
+                        # Mark as manually ordered — render will respect this instead of date-sorting
+                        order_key = "experience_manual_order" if section == "experience" else "projects_manual_order"
+                        profile[order_key] = [e.get("id") for e in profile[section]]
+                        print(f"[REORDER] {section}: {profile[order_key]}")
+
+                elif action.startswith("add_") and section and section != "personal":
                     items = profile.get(section, [])
                     if isinstance(updates, dict):
                         # Extracurricular can be strings or dicts
@@ -339,11 +445,19 @@ async def chat(
                 elif action == "update_skill" and updates:
                     pool = profile.get("skills_pool", [])
                     cat = updates.get("category", "Other")
+                    old_cat = updates.get("old_category", "")  # for rename
                     skill_items = updates.get("items", [])
+                    match_cat = old_cat if old_cat else cat
+                    found = False
                     for s in pool:
-                        if s.get("category", "").lower() == cat.lower():
-                            s["items"] = skill_items
+                        if s.get("category", "").lower() == match_cat.lower():
+                            s["category"] = cat  # rename if old_category was provided
+                            if skill_items:
+                                s["items"] = skill_items
+                            found = True
                             break
+                    if not found:
+                        pool.append({"category": cat, "items": skill_items})
                     profile["skills_pool"] = pool
 
                 elif action == "update_experience" and updates:
@@ -381,30 +495,8 @@ async def chat(
                 data_updated = True
                 _save_profile(user, profile)
 
-                # ── Also propagate edits to tailored data (if exists) ──
-                active_company = req.company or "GENERIC"
-                tailored = _load_tailored(user, active_company)
-                if tailored:
-                    # Mirror the same field updates into tailored data
-                    if action == "edit_summary" and updates.get("summary"):
-                        tailored["summary"] = updates["summary"]
-                    elif action == "edit_title" and updates.get("title"):
-                        tp = tailored.get("personal", {})
-                        tp["title"] = updates["title"]
-                        tailored["personal"] = tp
-                    elif action == "edit_personal":
-                        tp = tailored.get("personal", {})
-                        tp.update(updates)
-                        tailored["personal"] = tp
-                    elif action in ("add_extracurricular", "edit_extracurricular", "remove_extracurricular"):
-                        tailored["extracurricular"] = profile.get("extracurricular", [])
-                    elif action in ("add_education", "edit_education", "remove_education"):
-                        tailored["education"] = profile.get("education", [])
-                    elif action in ("add_certification", "edit_certification", "remove_certification"):
-                        tailored["certifications"] = profile.get("certifications", [])
-                    elif action in ("add_skill", "remove_skill", "update_skill"):
-                        tailored["skills_pool"] = profile.get("skills_pool", [])
-                    _save_tailored(user, active_company, tailored)
+                # ── Propagate edits to ALL existing tailored JSONs ──
+                _propagate_to_all_tailored(user, profile, action, updates)
 
     elif intent == "FORMAT_CHANGE":
         fmt_result = formatter.parse_format_request(message, config)
@@ -620,6 +712,46 @@ async def render(
                 if profile["personal"].get(pkey):
                     data["personal"][pkey] = profile["personal"][pkey]
 
+        # Sync experience/projects from profile — profile is always source of truth for
+        # which entries exist, in what order, and with correct IDs.
+        # If tailored has entries with no IDs (stale data), fall back to profile fully.
+        for section in ("experience", "projects"):
+            profile_items = profile.get(section, [])
+            if not profile_items:
+                continue
+            tailored_items = data.get(section, [])
+            tailored_ids = {e.get("id") for e in tailored_items if e.get("id")}
+
+            # If tailored has no IDs at all → stale, replace entirely with profile
+            if not tailored_ids:
+                data[section] = profile_items
+                print(f"Replaced stale {section} from profile (no IDs in tailored).")
+            else:
+                # Append any profile entries that are genuinely missing from tailored
+                new_items = [e for e in profile_items if e.get("id") not in tailored_ids]
+                if new_items:
+                    data[section] = tailored_items + new_items
+                    print(f"Merged {len(new_items)} new {section} entries from profile.")
+                # Remove tailored entries that no longer exist in profile
+                profile_ids = {e.get("id") for e in profile_items if e.get("id")}
+                data[section] = [e for e in data[section] if not e.get("id") or e.get("id") in profile_ids]
+
+    # Apply ordering: respect manual order if set, otherwise sort by date (newest first)
+    for section, order_key in (("experience", "experience_manual_order"), ("projects", "projects_manual_order")):
+        if not data.get(section):
+            continue
+        manual_order = profile.get(order_key) if profile else None
+        if manual_order:
+            # Respect manual order stored in profile
+            id_to_item = {e.get("id"): e for e in data[section]}
+            ordered = [id_to_item[eid] for eid in manual_order if eid in id_to_item]
+            remaining = [e for e in data[section] if e.get("id") not in set(manual_order)]
+            data[section] = ordered + remaining
+        else:
+            # Default: sort newest first by date
+            if section == "experience":
+                data[section] = _sort_experience(data[section])
+
     config = _load_config(user)
     print("Loaded render config:", config)
 
@@ -775,6 +907,39 @@ async def update_render_config(
     merged = formatter.apply_config_updates(current, config)
     _save_config(user, merged)
     return {"success": True, "config": merged}
+
+
+# ─────────────────────────────────────────────
+# Saved CVs listing endpoint
+# ─────────────────────────────────────────────
+
+@app.get("/saved-cvs")
+async def list_saved_cvs(user: User = Depends(get_current_user)):
+    """List all previously rendered CVs for the user, grouped by company."""
+    import re as _re
+    prefix = _r2_key(user, "output/")
+    all_keys = r2_list_keys(prefix)
+
+    cv_map = {}
+    for key in all_keys:
+        filename = key.split("/")[-1]
+        m = _re.search(r'_CV_(.+?)_(1PAGE|2PAGE)\.(docx|pdf)$', filename, _re.IGNORECASE)
+        if not m:
+            continue
+        company = m.group(1)
+        mode = m.group(2).lower()
+        ext = m.group(3).lower()
+        slot = f"{company}_{mode}"
+        if slot not in cv_map:
+            cv_map[slot] = {"company": company, "mode": mode,
+                            "docx_filename": None, "pdf_filename": None}
+        if ext == "docx":
+            cv_map[slot]["docx_filename"] = filename
+        else:
+            cv_map[slot]["pdf_filename"] = filename
+
+    items = sorted(cv_map.values(), key=lambda x: x["company"])
+    return {"saved_cvs": items}
 
 
 # ─────────────────────────────────────────────

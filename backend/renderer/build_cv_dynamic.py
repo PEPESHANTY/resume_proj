@@ -668,6 +668,18 @@ def export_pdfs(docx_paths):
 # HIGH-LEVEL API  (used by FastAPI / Streamlit)
 # ─────────────────────────────────────────────
 
+def _sanitize(obj):
+    """Recursively strip all XML 1.0 incompatible characters from strings."""
+    if isinstance(obj, str):
+        # Keep only XML 1.0 legal chars: #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD]
+        return re.sub(r'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD]', '', obj)
+    if isinstance(obj, list):
+        return [_sanitize(i) for i in obj]
+    if isinstance(obj, dict):
+        return {k: _sanitize(v) for k, v in obj.items()}
+    return obj
+
+
 def render_cv(data: dict, mode: str = "2page", company: str = "GENERIC",
               config: dict | None = None, output_dir: str | None = None,
               export_pdf: bool = False) -> dict:
@@ -677,6 +689,8 @@ def render_cv(data: dict, mode: str = "2page", company: str = "GENERIC",
     Returns:
         {"docx": "/path/to.docx", "pdf": "/path/to.pdf" or None}
     """
+    data = _sanitize(data)
+
     if output_dir is None:
         output_dir = os.path.join(os.path.dirname(__file__), "..", "..", "CREATED")
     os.makedirs(output_dir, exist_ok=True)

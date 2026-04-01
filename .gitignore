@@ -37,11 +37,19 @@ backend/storage/users/*/output/
 # PDF resumes (generated artifacts)
 *.pdf
 
+# Databases (local dev only — cloud uses R2)
+*.db
+*.sqlite
+*.sqlite3
+
 # Logs
 *.log
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Streamlit secrets (local only)
+.streamlit/secrets.toml
 
 # Claude Code local settings
 .claude/settings.local.json

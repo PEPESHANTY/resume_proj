@@ -37,3 +37,8 @@ boto3>=1.34.0
 # DOCX → HTML preview + PDF via LibreOffice
 # ─────────────────────────────────────────
 mammoth>=1.6.0
+
+
+# Windows-only: MS Word COM fallback for PDF
+# (LibreOffice via packages.txt handles cloud/Linux)
+pywin32>=305; sys_platform == "win32"

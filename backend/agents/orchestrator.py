@@ -47,15 +47,51 @@ def classify_intent(message: str, has_file: bool = False, file_type: str = "") -
         return "TAILOR_CV"
     if any(k in msg_lower for k in ["font", "margin", "section order", "remove section", "hide section", "page size", "make it"]):
         return "FORMAT_CHANGE"
-    if any(k in msg_lower for k in ["add project", "add experience", "add cert", "remove project",
-                                      "edit my", "update my", "change my", "add skill",
-                                      "linkedin", "github url", "add link",
-                                      "summary", "add point", "add bullet",
-                                      "extracurricular", "title", "headline"]):
+    if any(k in msg_lower for k in [
+        # ── add ──
+        "add project", "add experience", "add cert", "add skill", "add education",
+        "add extracurricular", "add activity", "add link", "add bullet", "add point",
+        "new experience", "new project", "new job", "new role", "new position",
+        "i worked at", "i joined", "i started working", "i have a new",
+        # ── remove / delete ──
+        "remove", "delete", "get rid of", "drop",
+        # ── edit / update / change ──
+        "edit my", "update my", "change my", "correct my", "fix my",
+        "edit the", "update the", "change the", "rename", "replace",
+        "set my", "set the",
+        # ── reorder / move ──
+        "move", "reorder", "put", "bring", "on top", "at top",
+        "swap", "rearrange", "shift", "make it first", "make it last",
+        # ── content: summary / title ──
+        "summary", "headline", "title", "objective",
+        "make my summary", "rewrite my summary", "improve my summary",
+        "shorten my summary", "expand my summary",
+        # ── content: bullets / descriptions ──
+        "bullet", "point", "rewrite", "improve", "strengthen", "make it more",
+        "make it sound", "make it better", "polish", "rephrase",
+        "add a line", "remove a line", "change the wording",
+        # ── dates / periods ──
+        "date", "period", "start date", "end date", "from", "to present",
+        "currently working", "still working", "ended", "left",
+        # ── contact / personal ──
+        "linkedin", "github", "phone", "email", "address", "location",
+        "contact", "website", "portfolio", "url", "link",
+        # ── skills ──
+        "skill", "technology", "tech stack", "language", "framework", "tool",
+        "category", "add to skills", "remove from skills",
+        # ── hide / show / toggle ──
+        "hide", "show", "activate", "deactivate", "include", "exclude",
+        "toggle", "mark as active", "mark as inactive",
+        # ── education / certs ──
+        "extracurricular", "certification", "certificate", "degree", "module",
+        "course", "grade", "cgpa", "gpa", "gpa",
+        # ── misc ──
+        "make eaton", "make ceadar", "make cognizant", "make ltimindtree",
+    ]):
         return "EDIT_KNOWLEDGE_BASE"
-    if any(k in msg_lower for k in ["show my", "view my", "what do i have", "my profile", "my data"]):
+    if any(k in msg_lower for k in ["show my", "view my", "what do i have", "my profile", "my data", "list my"]):
         return "VIEW_DATA"
-    if any(k in msg_lower for k in ["include", "exclude", "select", "deselect", "toggle"]):
+    if any(k in msg_lower for k in ["select", "deselect"]):
         return "SELECTION_CHANGE"
 
     # For ambiguous cases, use LLM
@@ -170,27 +206,108 @@ OBEY THE USER'S REQUEST and override the defaults. The user's instruction is the
 - When the user says "just add X" or "add one word of X", make the SMALLEST edit needed — integrate the word/phrase into the existing text. Do NOT rewrite the entire section.
 - Preserve the existing content, length, and structure. Only modify what the user explicitly asked for.
 
+## COMPLETE ACTION REFERENCE:
+
+### ── EXPERIENCE ──
+| User says | action | updates shape |
+|---|---|---|
+| "add experience at X as Y from Z" | add_experience | {company, role, location, date_range, bullets:[], active:true} |
+| "edit CeADAR dates / role / location / bullets" | edit_experience | {target_id, date_range / role / location / bullets} |
+| "add a bullet to Eaton experience" | edit_experience | {target_id, bullets: [...existing + new]} |
+| "remove bullet 2 from CeADAR" | edit_experience | {target_id, bullets: [...existing minus removed]} |
+| "rewrite CeADAR bullets to be more ATS-friendly" | edit_experience | {target_id, bullets: [...rewritten]} |
+| "hide / deactivate Cognizant experience" | edit_experience | {target_id, active: false} |
+| "show / activate Cognizant experience" | edit_experience | {target_id, active: true} |
+| "remove / delete experience" | remove_experience | target_id only |
+| "move Eaton to top / reorder experience" | reorder_experience | {order: ["id1","id2",...]} — full ordered id list |
+| "mark Eaton as current / present" | edit_experience | {target_id, date_range: "Month YYYY – Present"} |
+
+### ── PROJECTS ──
+| User says | action | updates shape |
+|---|---|---|
+| "add project X built with Y" | add_project | {title, description, tech_stack:[], bullets:[], active:true} |
+| "edit RiceAI description / tech stack / bullets" | edit_project | {target_id, description / tech_stack / bullets} |
+| "add a bullet to ScholarGenie" | edit_project | {target_id, bullets: [...existing + new]} |
+| "remove bullet 1 from Face Verification" | edit_project | {target_id, bullets: [...remaining]} |
+| "rewrite RiceAI bullets" | edit_project | {target_id, bullets: [...rewritten]} |
+| "hide / deactivate a project" | edit_project | {target_id, active: false} |
+| "show / activate a project" | edit_project | {target_id, active: true} |
+| "remove project" | remove_project | target_id only |
+| "move RiceAI to top / reorder projects" | reorder_projects | {order: ["id1","id2",...]} |
+
+### ── SUMMARY & TITLE ──
+| User says | action | updates shape |
+|---|---|---|
+| "update / rewrite / improve my summary" | edit_summary | {summary: "full text"} |
+| "make summary shorter / longer / ATS-focused" | edit_summary | {summary: "adjusted text"} |
+| "add Azure to my summary" | edit_summary | {summary: "existing + Azure woven in"} |
+| "change title / headline" | edit_title | {title: "Role | Role | Tech"} |
+
+### ── SKILLS ──
+| User says | action | updates shape |
+|---|---|---|
+| "add LangGraph to ML & AI skills" | add_skill | {category: "ML & AI", items: ["LangGraph"]} |
+| "remove Kafka from Data Engineering" | remove_skill | {skill: "Kafka"} |
+| "rename 'Tools' category to 'Frameworks & Tools'" | update_skill | {old_category: "Tools", category: "Frameworks & Tools", items: [...existing]} |
+| "replace entire Languages category with [...]" | update_skill | {category: "Languages", items: [...]} |
+| "move Python to first in Languages" | update_skill | {category: "Languages", items: ["Python", ...rest]} |
+
+### ── CERTIFICATIONS ──
+| User says | action | updates shape |
+|---|---|---|
+| "add Azure AI-900 cert, Dec 2025" | add_certification | {name, issuer, date, badge_url, active:true} |
+| "edit AWS cert date" | edit_certification | {target_id, date: "..."} |
+| "add badge URL to Oracle cert" | edit_certification | {target_id, badge_url: "..."} |
+| "hide / deactivate a cert" | edit_certification | {target_id, active: false} |
+| "remove cert" | remove_certification | target_id only |
+
+### ── EDUCATION ──
+| User says | action | updates shape |
+|---|---|---|
+| "add Deep Learning module to UCD" | edit_education | {target_id, modules: [...existing + "Deep Learning"]} |
+| "remove Blockchain from SPPU modules" | edit_education | {target_id, modules: [...remaining]} |
+| "edit UCD grade / degree name" | edit_education | {target_id, grade / degree} |
+| "add new education entry" | add_education | {institution, degree, location, date_range, grade, modules:[]} |
+| "remove education entry" | remove_education | target_id |
+
+### ── EXTRACURRICULAR ──
+| User says | action | updates shape |
+|---|---|---|
+| "add chess / swimming / volunteering" | add_extracurricular | {text: "descriptive sentence"} |
+| "edit Simon Community entry" | edit_extracurricular | {target_id, text: "updated text"} |
+| "make badminton entry shorter / longer" | edit_extracurricular | {target_id, text: "adjusted text"} |
+| "hide / deactivate an activity" | edit_extracurricular | {target_id, active: false} |
+| "remove extracurricular" | remove_extracurricular | target_id |
+
+### ── PERSONAL / CONTACT ──
+| User says | action | updates shape |
+|---|---|---|
+| "update LinkedIn URL" | edit_personal | {linkedin: "url"} |
+| "update GitHub URL" | edit_personal | {github: "url"} |
+| "change phone number" | edit_personal | {phone: "..."} |
+| "change email" | edit_personal | {email: "..."} |
+| "update location / city" | edit_personal | {location: "..."} |
+| "add portfolio / website URL" | edit_personal | {website: "..."} |
+| "change my name" | edit_personal | {name: "..."} |
+
+---
+
 ## OUTPUT FORMAT:
 Return a JSON object with:
-1. "action": one of "add_experience", "edit_experience", "remove_experience",
-   "add_project", "edit_project", "remove_project",
-   "add_certification", "edit_certification", "remove_certification",
-   "add_skill", "remove_skill", "edit_personal", "edit_links",
-   "add_extracurricular", "edit_extracurricular", "remove_extracurricular",
-   "add_education", "edit_education", "remove_education",
-   "edit_summary", "edit_title"
-2. "target_id": the ID of the item to edit/remove (null for add/personal/summary/title)
-3. "updates": the data to add or the fields to update.
-   - For summary edits: {"summary": "the full updated summary text"}
-   - For title edits: {"title": "the new title"}
-   - For extracurricular: {"text": "the activity description"}
-4. "needs_more_info": boolean — true if you need to ask the user for more details
-5. "question": if needs_more_info is true, what to ask
-6. "response_message": friendly confirmation message showing what changed
+1. "action": one of the actions listed above
+2. "target_id": the exact ID string of the item to edit/remove (null for add/summary/title/personal)
+   - ALWAYS look up the correct ID from the profile JSON provided. Never guess.
+3. "updates": the data dict as described in the table above
+4. "needs_more_info": true if critical info is missing (e.g. adding experience but no company name given)
+5. "question": if needs_more_info=true, a single specific question to ask the user
+6. "response_message": short friendly confirmation of what changed
 
-IMPORTANT: Never fabricate data the user hasn't mentioned. If insufficient detail, set needs_more_info=true.
-When user asks to edit/update summary or professional summary, use action="edit_summary".
-When user asks to edit/update title or headline, use action="edit_title"."""
+RULES:
+- For reorder actions: include ALL existing IDs in the "order" array, just rearranged.
+- For bullet edits: always return the FULL updated bullets array (not just the changed bullet).
+- For hide/show: set active=true or active=false in updates.
+- Never fabricate data the user hasn't mentioned.
+- For ambiguous references like "my last job" or "the first project" — resolve from the profile JSON."""
 
     messages = [{"role": "system", "content": system}]
     # Include recent chat history for context (user may refer to previous edits)

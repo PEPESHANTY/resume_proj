@@ -14,6 +14,8 @@ import time
 # ─────────────────────────────────────────────
 
 API_URL = os.environ.get("API_URL", "http://localhost:8000")
+# On cloud deployment, set API_URL env var to your backend URL.
+# e.g. Streamlit Cloud → Settings → Secrets: API_URL = "https://your-backend.com"
 
 st.set_page_config(
     page_title="CV Builder",
@@ -303,7 +305,8 @@ def render_knowledge_base(profile):
                         api_put("/profile", profile)
                         load_profile()
                         st.rerun()
-                with st.expander(f"✏️ Edit bullets — {exp.get('role', 'Role')}"):
+                with st.container(border=True):
+                    st.caption(f"✏️ Edit bullets — {exp.get('role', 'Role')}")
                     for j, b in enumerate(exp.get("bullets", [])):
                         new_b = st.text_area(f"Bullet {j+1}", value=b, key=f"exp_{i}_bul_{j}", height=100)
                         if new_b != b:
@@ -332,7 +335,8 @@ def render_knowledge_base(profile):
                     api_put("/profile", profile)
                     load_profile()
                     st.rerun()
-            with st.expander(f"✏️ Edit bullets — {proj.get('title', 'Project')}"):
+            with st.container(border=True):
+                st.caption(f"✏️ Edit bullets — {proj.get('title', 'Project')}")
                 for j, b in enumerate(proj.get("bullets", [])):
                     new_b = st.text_area(f"Bullet {j+1}", value=b, key=f"proj_{i}_bul_{j}", height=100)
                     if new_b != b:
@@ -426,7 +430,7 @@ def render_knowledge_base(profile):
             new_text = st.text_area(
                 f"Activity {i+1}",
                 value=ex.get("text", ""),
-                height=60,
+                height=68,
                 key=f"extra_text_{i}"
             )
             if new_text != ex.get("text", ""):
@@ -929,6 +933,107 @@ def render_preview_panel():
 
 
 # ─────────────────────────────────────────────
+# SAVED CVs TAB
+# ─────────────────────────────────────────────
+
+def render_saved_cvs_tab():
+    st.subheader("📁 Saved CVs")
+    st.caption("All previously rendered CVs — one card per company/role. Click to preview or download.")
+
+    if st.button("🔄 Refresh List", key="refresh_saved_cvs"):
+        if "saved_cvs_cache" in st.session_state:
+            del st.session_state["saved_cvs_cache"]
+        st.rerun()
+
+    # Load list (cached in session to avoid repeated API calls)
+    if "saved_cvs_cache" not in st.session_state:
+        resp = api_get("/saved-cvs")
+        if resp.status_code == 200:
+            st.session_state.saved_cvs_cache = resp.json().get("saved_cvs", [])
+        else:
+            st.error("Could not load saved CVs.")
+            return
+
+    saved = st.session_state.saved_cvs_cache
+    if not saved:
+        st.info("No saved CVs yet. Tailor a CV and click Render to create one.")
+        return
+
+    st.caption(f"{len(saved)} saved CV(s) found.")
+
+    for cv in saved:
+        company = cv.get("company", "?")
+        mode = cv.get("mode", "2page")
+        docx_fn = cv.get("docx_filename")
+        pdf_fn = cv.get("pdf_filename")
+        label = f"**{company}** — {mode.upper()}"
+
+        with st.expander(label, expanded=False):
+            col_d, col_p, col_prev = st.columns([1, 1, 2])
+
+            with col_d:
+                if docx_fn:
+                    try:
+                        r = requests.get(f"{API_URL}/download/{docx_fn}",
+                                         headers=api_headers(), timeout=30)
+                        if r.status_code == 200:
+                            st.download_button(
+                                "⬇️ DOCX",
+                                data=r.content,
+                                file_name=docx_fn,
+                                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                use_container_width=True,
+                                key=f"dl_docx_{company}_{mode}",
+                            )
+                    except Exception:
+                        st.warning("DOCX unavailable")
+                else:
+                    st.caption("No DOCX")
+
+            with col_p:
+                if pdf_fn:
+                    try:
+                        r = requests.get(f"{API_URL}/download/{pdf_fn}",
+                                         headers=api_headers(), timeout=30)
+                        if r.status_code == 200:
+                            st.download_button(
+                                "⬇️ PDF",
+                                data=r.content,
+                                file_name=pdf_fn,
+                                mime="application/pdf",
+                                use_container_width=True,
+                                key=f"dl_pdf_{company}_{mode}",
+                            )
+                    except Exception:
+                        st.warning("PDF unavailable")
+                else:
+                    st.caption("No PDF")
+
+            with col_prev:
+                # Inline preview button — loads on demand to keep UI fast
+                preview_key = f"preview_open_{company}_{mode}"
+                if st.button("👁️ Preview", key=f"btn_prev_{company}_{mode}", use_container_width=True):
+                    st.session_state[preview_key] = not st.session_state.get(preview_key, False)
+
+            if st.session_state.get(preview_key) and docx_fn:
+                try:
+                    import base64
+                    prev_r = requests.get(f"{API_URL}/preview/{docx_fn}",
+                                          headers=api_headers(), timeout=30)
+                    if prev_r.status_code == 200:
+                        b64 = base64.b64encode(prev_r.content).decode("utf-8")
+                        st.markdown(
+                            f'<iframe src="data:text/html;base64,{b64}" '
+                            f'class="pdf-preview-frame"></iframe>',
+                            unsafe_allow_html=True,
+                        )
+                    else:
+                        st.warning("Preview not available.")
+                except Exception as e:
+                    st.warning(f"Preview error: {e}")
+
+
+# ─────────────────────────────────────────────
 # MAIN LAYOUT
 # ─────────────────────────────────────────────
 
@@ -955,9 +1060,10 @@ def main():
 
     # LEFT 70% — Main workspace
     with main_col:
-        tab_kb, tab_tailor, tab_settings = st.tabs([
+        tab_kb, tab_tailor, tab_saved, tab_settings = st.tabs([
             "📋 Knowledge Base",
             "🎯 Tailor CV",
+            "📁 Saved CVs",
             "⚙️ Settings",
         ])
 
@@ -966,6 +1072,9 @@ def main():
 
         with tab_tailor:
             render_tailor_tab(st.session_state.profile)
+
+        with tab_saved:
+            render_saved_cvs_tab()
 
         with tab_settings:
             st.subheader("⚙️ Render Configuration")
