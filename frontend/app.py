@@ -17,6 +17,9 @@ API_URL = os.environ.get("API_URL", "http://localhost:8000")
 # On cloud deployment, set API_URL env var to your backend URL.
 # e.g. Streamlit Cloud → Settings → Secrets: API_URL = "https://your-backend.com"
 
+# Emails that are pre-authorized to use the server's own API key (no user key needed)
+WHITELISTED_EMAILS = {"shantanubhute@gmail.com", "tejaldabhade1511@gmail.com"}
+
 st.set_page_config(
     page_title="CV Builder",
     page_icon="📄",
@@ -93,6 +96,8 @@ def init_state():
         "token": None,
         "user_id": None,
         "username": None,
+        "user_email": None,
+        "openai_api_key": "",       # entered by user in settings; never persisted
         "profile": None,
         "render_config": None,
         "chat_history": [],
@@ -118,7 +123,20 @@ init_state()
 # ─────────────────────────────────────────────
 
 def api_headers():
-    return {"Authorization": f"Bearer {st.session_state.token}"}
+    headers = {"Authorization": f"Bearer {st.session_state.token}"}
+    key = st.session_state.get("openai_api_key", "")
+    if key:
+        headers["x-openai-api-key"] = key
+    return headers
+
+
+def _is_whitelisted():
+    return st.session_state.get("user_email") in WHITELISTED_EMAILS
+
+
+def _needs_api_key():
+    """Return True if this user must provide their own OpenAI key."""
+    return not _is_whitelisted() and not st.session_state.get("openai_api_key", "")
 
 def api_get(endpoint):
     return requests.get(f"{API_URL}{endpoint}", headers=api_headers())
@@ -135,6 +153,16 @@ def load_profile():
         body = resp.json()
         st.session_state.profile = body.get("profile")
         st.session_state.render_config = body.get("render_config")
+
+
+def load_user_email():
+    """Fetch the logged-in user's email and store in session state."""
+    try:
+        resp = requests.get(f"{API_URL}/auth/me", headers=api_headers(), timeout=15)
+        if resp.status_code == 200:
+            st.session_state.user_email = resp.json().get("email")
+    except Exception:
+        pass
 
 
 # ─────────────────────────────────────────────
@@ -168,6 +196,7 @@ def render_login():
                             st.session_state.user_id = body["user_id"]
                             st.session_state.username = body["username"]
                             load_profile()
+                            load_user_email()
                             st.rerun()
                         else:
                             try:
@@ -205,6 +234,7 @@ def render_login():
                             st.session_state.user_id = body["user_id"]
                             st.session_state.username = body["username"]
                             load_profile()
+                            load_user_email()
                             st.rerun()
                         else:
                             try:
@@ -1059,6 +1089,14 @@ def main():
 
     st.divider()
 
+    # ── API key warning banner ──
+    if _needs_api_key():
+        st.warning(
+            "**API key required.** AI features (chat, CV tailoring, CV upload) are disabled. "
+            "Go to **Settings** → **OpenAI API Key** to enter your key. It's stored in your browser session only.",
+            icon="🔑",
+        )
+
     # ── 70/30 LAYOUT ──
     main_col, chat_col = st.columns([55, 45])
 
@@ -1081,6 +1119,38 @@ def main():
             render_saved_cvs_tab()
 
         with tab_settings:
+            # ── API Key (non-whitelisted users only) ──────────────
+            if not _is_whitelisted():
+                st.subheader("🔑 OpenAI API Key")
+                st.caption(
+                    "Enter your own OpenAI API key to use AI features (chat edits, tailoring, CV extraction). "
+                    "The key is stored in your browser session only and is never saved to any server."
+                )
+                key_input = st.text_input(
+                    "OpenAI API Key",
+                    value=st.session_state.get("openai_api_key", ""),
+                    type="password",
+                    placeholder="sk-...",
+                    key="api_key_input",
+                )
+                col_save, col_clear = st.columns([1, 1])
+                with col_save:
+                    if st.button("Save Key", use_container_width=True, type="primary"):
+                        st.session_state.openai_api_key = key_input.strip()
+                        if st.session_state.openai_api_key:
+                            st.success("API key saved for this session.")
+                        else:
+                            st.warning("Key cleared.")
+                with col_clear:
+                    if st.button("Clear Key", use_container_width=True):
+                        st.session_state.openai_api_key = ""
+                        st.info("Key cleared.")
+                if st.session_state.get("openai_api_key"):
+                    st.success("API key is set — AI features are enabled.")
+                else:
+                    st.warning("No API key set. AI features (chat, tailoring, CV upload) will be blocked until you enter a key.")
+                st.divider()
+
             st.subheader("⚙️ Render Configuration")
             config = st.session_state.render_config or {}
 

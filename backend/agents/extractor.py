@@ -16,8 +16,6 @@ from pathlib import Path
 
 from backend.config import EXTRACTOR_TEMP, PROMPTS_DIR, SCHEMA_DIR, get_openai_client, get_model_name, USE_AZURE, AZURE_OPENAI_DEPLOYMENT
 
-client = get_openai_client()
-
 
 # ── Text extraction from files ─────────────────────
 
@@ -41,7 +39,7 @@ def extract_text_from_docx(file_bytes: bytes) -> str:
 def extract_text_from_image(file_bytes: bytes, mime_type: str = "image/png") -> str:
     """Use GPT-4o Vision to OCR an image of a CV."""
     b64 = base64.b64encode(file_bytes).decode("utf-8")
-    response = client.chat.completions.create(
+    response = get_openai_client().chat.completions.create(
         model=get_model_name(),
         messages=[
             {
@@ -124,7 +122,7 @@ def extract_to_json(cv_text: str, existing_profile: dict | None = None) -> dict:
         {"role": "user", "content": user_content},
     ]
 
-    response = client.chat.completions.create(
+    response = get_openai_client().chat.completions.create(
         model=get_model_name(),
         messages=messages,
         temperature=EXTRACTOR_TEMP,

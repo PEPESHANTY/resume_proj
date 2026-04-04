@@ -6,8 +6,6 @@ Returns PASS/FAIL + specific feedback for improvement.
 import json
 from backend.config import EVALUATOR_TEMP, PROMPTS_DIR, EVAL_PASS_THRESHOLD, get_openai_client, get_model_name
 
-client = get_openai_client()
-
 
 def _load_prompt(name: str) -> str:
     from pathlib import Path
@@ -68,7 +66,7 @@ Return JSON with: verdict, overall_score, scores, feedback, issues, strengths
         {"role": "user", "content": user_content},
     ]
 
-    response = client.chat.completions.create(
+    response = get_openai_client().chat.completions.create(
         model=get_model_name(),
         messages=messages,
         temperature=EVALUATOR_TEMP,

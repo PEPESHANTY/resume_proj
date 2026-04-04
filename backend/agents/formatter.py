@@ -10,8 +10,6 @@ Examples:
 import json
 from backend.config import FORMATTER_TEMP, PROMPTS_DIR, get_openai_client, get_model_name
 
-client = get_openai_client()
-
 
 def _load_prompt(name: str) -> str:
     from pathlib import Path
@@ -69,7 +67,7 @@ Return JSON with: updates, explanation, requires_re_render
         {"role": "user", "content": user_content},
     ]
 
-    response = client.chat.completions.create(
+    response = get_openai_client().chat.completions.create(
         model=get_model_name(),
         messages=messages,
         temperature=FORMATTER_TEMP,

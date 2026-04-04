@@ -2,10 +2,18 @@
 Application configuration — reads from .env
 """
 import os
+from contextvars import ContextVar
 from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# ── Per-request API key injection ──────────────────
+# Set this context var in request handlers to override the env key for that request.
+_request_api_key: ContextVar[str | None] = ContextVar("request_api_key", default=None)
+
+# Emails that always use the server's own API key (no user key required)
+WHITELISTED_EMAILS = {"shantanubhute@gmail.com", "tejaldabhade1511@gmail.com"}
 
 # ── Paths ──────────────────────────────────────────
 BASE_DIR     = Path(__file__).resolve().parent.parent          # c:\RESUME_PROJECT
@@ -54,8 +62,19 @@ EVAL_PASS_THRESHOLD = int(os.getenv("EVAL_PASS_THRESHOLD", "95"))
 
 # ── OpenAI Client Factory ─────────────────────────
 def get_openai_client():
-    """Return an OpenAI or AzureOpenAI client depending on env vars."""
+    """Return an OpenAI or AzureOpenAI client.
+
+    Priority: per-request context var key > env key.
+    If neither is set, the OpenAI client is returned with an empty key
+    and the call will fail with an auth error at the API level.
+    """
     from openai import OpenAI, AzureOpenAI
+
+    req_key = _request_api_key.get()
+
+    # Per-request user key always uses standard OpenAI (not Azure)
+    if req_key:
+        return OpenAI(api_key=req_key)
 
     if USE_AZURE:
         return AzureOpenAI(
@@ -63,8 +82,7 @@ def get_openai_client():
             api_key=AZURE_OPENAI_API_KEY,
             api_version=AZURE_OPENAI_API_VERSION,
         )
-    else:
-        return OpenAI(api_key=OPENAI_API_KEY)
+    return OpenAI(api_key=OPENAI_API_KEY)
 
 
 def get_model_name():

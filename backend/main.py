@@ -6,7 +6,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
@@ -19,6 +19,7 @@ from backend.utils import (
     r2_enabled, r2_read_json, r2_write_json,
     r2_read_bytes, r2_write_bytes, r2_exists, r2_list_keys, upload_to_r2,
 )
+from backend.config import _request_api_key, WHITELISTED_EMAILS
 
 app = FastAPI(title="CV Builder API", version="1.0.0")
 
@@ -31,6 +32,29 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+
+
+# ─────────────────────────────────────────────
+# LLM access gate
+# ─────────────────────────────────────────────
+
+def _require_llm_key(user: User, provided_key: str | None) -> str | None:
+    """Return the key to inject, or raise 402 if no key available.
+
+    Whitelisted emails use the server env key (returns None = use default).
+    All other users must supply x-openai-api-key header.
+    """
+    if user.email in WHITELISTED_EMAILS:
+        return None  # use server env key
+    if not provided_key:
+        raise HTTPException(
+            status_code=402,
+            detail=(
+                "An OpenAI API key is required to use AI features. "
+                "Please enter your key in Settings → API Key."
+            ),
+        )
+    return provided_key
 
 
 @app.on_event("startup")
@@ -199,14 +223,21 @@ def _propagate_to_all_tailored(user: User, profile: dict, action: str, updates: 
 async def upload_cv(
     file: UploadFile = File(...),
     user: User = Depends(get_current_user),
+    x_openai_api_key: str | None = Header(default=None),
 ):
     """Upload a CV file (PDF/DOCX/Image) and extract structured data."""
+    key = _require_llm_key(user, x_openai_api_key)
     file_bytes = await file.read()
     filename = file.filename or "upload.pdf"
 
     existing_profile = _load_profile(user)
 
-    result = extractor.run_extraction(file_bytes, filename, existing_profile)
+    token = _request_api_key.set(key) if key else None
+    try:
+        result = extractor.run_extraction(file_bytes, filename, existing_profile)
+    finally:
+        if token is not None:
+            _request_api_key.reset(token)
 
     if result.get("profile"):
         _save_profile(user, result["profile"])
@@ -227,8 +258,20 @@ async def upload_cv(
 async def chat(
     req: ChatRequest,
     user: User = Depends(get_current_user),
+    x_openai_api_key: str | None = Header(default=None),
 ):
     """Main chat endpoint — classifies intent and routes to the right agent."""
+    # Gate LLM access — sets context var so all agents use the right key
+    key = _require_llm_key(user, x_openai_api_key)
+    _cv_token = _request_api_key.set(key) if key else None
+    try:
+        return await _chat_inner(req, user)
+    finally:
+        if _cv_token is not None:
+            _request_api_key.reset(_cv_token)
+
+
+async def _chat_inner(req: ChatRequest, user: User):
     message = req.message
     intent = orchestrator.classify_intent(message)
     profile = _load_profile(user)
@@ -547,15 +590,22 @@ async def chat(
 async def tailor_cv(
     req: TailorRequest,
     user: User = Depends(get_current_user),
+    x_openai_api_key: str | None = Header(default=None),
 ):
     """Run the full tailor → evaluate → iterate pipeline."""
+    key = _require_llm_key(user, x_openai_api_key)
     profile = _load_profile(user)
     if not profile:
         raise HTTPException(status_code=400, detail="No profile found. Upload CV first.")
 
-    result = orchestrator.run_tailor_pipeline(
-        profile, req.job_description, req.mode, req.user_selections
-    )
+    token = _request_api_key.set(key) if key else None
+    try:
+        result = orchestrator.run_tailor_pipeline(
+            profile, req.job_description, req.mode, req.user_selections
+        )
+    finally:
+        if token is not None:
+            _request_api_key.reset(token)
 
     # Save tailored data
     _save_tailored(user, req.company, result["tailored_data"])
@@ -586,21 +636,27 @@ class ManualRetailorRequest(BaseModel):
 async def re_tailor_cv(
     req: ManualRetailorRequest,
     user: User = Depends(get_current_user),
+    x_openai_api_key: str | None = Header(default=None),
 ):
     """Re-tailor current CV with manual feedback, then evaluate again."""
     from backend.agents import tailor as tailor_agent, evaluator as eval_agent
 
+    key = _require_llm_key(user, x_openai_api_key)
     profile = _load_profile(user)
     current = _load_tailored(user, req.company)
     if not profile or not current:
         raise HTTPException(status_code=400, detail="No profile or tailored data found.")
 
-    re_result = tailor_agent.re_tailor_with_feedback(
-        profile, req.job_description, current, req.feedback, req.mode
-    )
-    tailored_data = re_result.get("tailored_data", current)
-
-    evaluation = eval_agent.evaluate(tailored_data, req.job_description, profile)
+    token = _request_api_key.set(key) if key else None
+    try:
+        re_result = tailor_agent.re_tailor_with_feedback(
+            profile, req.job_description, current, req.feedback, req.mode
+        )
+        tailored_data = re_result.get("tailored_data", current)
+        evaluation = eval_agent.evaluate(tailored_data, req.job_description, profile)
+    finally:
+        if token is not None:
+            _request_api_key.reset(token)
     _save_tailored(user, req.company, tailored_data)
 
     return {
@@ -624,52 +680,49 @@ class InjectKeywordsRequest(BaseModel):
 async def inject_keywords(
     req: InjectKeywordsRequest,
     user: User = Depends(get_current_user),
+    x_openai_api_key: str | None = Header(default=None),
 ):
     """Smartly inject selected missing keywords into tailored CV's skills or experience."""
     from backend.config import get_openai_client, get_model_name
 
+    key = _require_llm_key(user, x_openai_api_key)
     profile = _load_profile(user)
     tailored = _load_tailored(user, req.company)
     if not tailored:
         raise HTTPException(status_code=400, detail="No tailored data found.")
 
-    client = get_openai_client()
-    prompt = f"""You have a tailored CV (JSON) and a list of missing keywords the user wants added.
-Your job: insert each keyword into the most logical place — either:
-1. Add it to the relevant skills category row
-2. Weave it naturally into an existing experience/project bullet (without fabricating)
-
-RULES:
-- Only add keywords that are truthfully present in the master profile
-- If a keyword maps to a skill, add to the matching skills category
-- If a keyword maps to experience, subtly weave it into a relevant bullet
-- Do NOT fabricate new bullets or experiences
-- Return the full updated tailored_data JSON
-
-## MASTER PROFILE (source of truth)
-{json.dumps(profile, indent=2)}
-
-## CURRENT TAILORED CV
-{json.dumps(tailored, indent=2)}
-
-## KEYWORDS TO INJECT
-{json.dumps(req.keywords)}
-
-## JOB DESCRIPTION (for context)
-{req.job_description[:2000] if req.job_description else 'N/A'}
-
-Return JSON with key "tailored_data" containing the updated CV data.
-"""
-    response = client.chat.completions.create(
-        model=get_model_name(),
-        messages=[
-            {"role": "system", "content": "You are a CV keyword optimization agent. Never fabricate data."},
-            {"role": "user", "content": prompt},
-        ],
-        temperature=0.3,
-        response_format={"type": "json_object"},
-        max_tokens=8000,
+    prompt = (
+        "You have a tailored CV (JSON) and a list of missing keywords the user wants added.\n"
+        "Your job: insert each keyword into the most logical place — either:\n"
+        "1. Add it to the relevant skills category row\n"
+        "2. Weave it naturally into an existing experience/project bullet (without fabricating)\n\n"
+        "RULES:\n"
+        "- Only add keywords that are truthfully present in the master profile\n"
+        "- If a keyword maps to a skill, add to the matching skills category\n"
+        "- If a keyword maps to experience, subtly weave it into a relevant bullet\n"
+        "- Do NOT fabricate new bullets or experiences\n"
+        "- Return the full updated tailored_data JSON\n\n"
+        f"## MASTER PROFILE (source of truth)\n{json.dumps(profile, indent=2)}\n\n"
+        f"## CURRENT TAILORED CV\n{json.dumps(tailored, indent=2)}\n\n"
+        f"## KEYWORDS TO INJECT\n{json.dumps(req.keywords)}\n\n"
+        f"## JOB DESCRIPTION (for context)\n{req.job_description[:2000] if req.job_description else 'N/A'}\n\n"
+        "Return JSON with key \"tailored_data\" containing the updated CV data."
     )
+    token = _request_api_key.set(key) if key else None
+    try:
+        response = get_openai_client().chat.completions.create(
+            model=get_model_name(),
+            messages=[
+                {"role": "system", "content": "You are a CV keyword optimization agent. Never fabricate data."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.3,
+            response_format={"type": "json_object"},
+            max_tokens=8000,
+        )
+    finally:
+        if token is not None:
+            _request_api_key.reset(token)
     result = json.loads(response.choices[0].message.content)
     updated = result.get("tailored_data", tailored)
     _save_tailored(user, req.company, updated)

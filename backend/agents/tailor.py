@@ -7,8 +7,6 @@ Rewrites bullets/summary to match JD keywords. Never fabricates.
 import json
 from backend.config import TAILOR_TEMP, PROMPTS_DIR, SCHEMA_DIR, get_openai_client, get_model_name
 
-client = get_openai_client()
-
 
 def _load_prompt(name: str) -> str:
     from pathlib import Path
@@ -87,7 +85,7 @@ Return JSON with keys: tailored_data, selection_rationale, keyword_coverage
         {"role": "user", "content": user_content},
     ]
 
-    response = client.chat.completions.create(
+    response = get_openai_client().chat.completions.create(
         model=get_model_name(),
         messages=messages,
         temperature=TAILOR_TEMP,
@@ -135,7 +133,7 @@ tailored_data, selection_rationale, keyword_coverage
         {"role": "user", "content": user_content},
     ]
 
-    response = client.chat.completions.create(
+    response = get_openai_client().chat.completions.create(
         model=get_model_name(),
         messages=messages,
         temperature=TAILOR_TEMP,

@@ -10,8 +10,6 @@ from pathlib import Path
 from backend.config import MAX_EVAL_LOOPS, EVAL_PASS_THRESHOLD, get_openai_client, get_model_name
 from backend.agents import extractor, tailor, evaluator, formatter
 
-client = get_openai_client()
-
 # ── Intent classification ──────────────────────────
 
 INTENTS = [
@@ -95,7 +93,7 @@ def classify_intent(message: str, has_file: bool = False, file_type: str = "") -
         return "SELECTION_CHANGE"
 
     # For ambiguous cases, use LLM
-    response = client.chat.completions.create(
+    response = get_openai_client().chat.completions.create(
         model=get_model_name(),
         messages=[
             {"role": "system", "content": f"Classify the user message into exactly one of these intents: {', '.join(INTENTS)}. Reply with ONLY the intent name, nothing else."},
@@ -146,7 +144,7 @@ Full profile JSON is available to the system. Use this context to answer user qu
     messages.extend(chat_history[-10:])  # last 10 messages for context
     messages.append({"role": "user", "content": message})
 
-    response = client.chat.completions.create(
+    response = get_openai_client().chat.completions.create(
         model=get_model_name(),
         messages=messages,
         temperature=0.7,
@@ -315,7 +313,7 @@ RULES:
         messages.append({"role": msg.get("role", "user"), "content": msg.get("content", "")})
     messages.append({"role": "user", "content": f"Current profile:\n{json.dumps(master_profile, indent=2)}\n\nUser request: {message}"})
 
-    response = client.chat.completions.create(
+    response = get_openai_client().chat.completions.create(
         model=get_model_name(),
         messages=messages,
         temperature=0.3,
